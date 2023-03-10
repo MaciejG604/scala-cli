@@ -101,11 +101,12 @@ class PublishSetupTests extends ScalaCliSuite {
     testInputs.fromRoot { root =>
       configSetup(root / configFile, root)
       gitInit(root / projDir)
-      val res = os.proc(TestUtil.cli, "--power", "publish", "setup", projDir).call(
+      val res = os.proc(TestUtil.cli, "--power", "publish", "setup", "--dummy", projDir).call(
         cwd = root,
         mergeErrIntoOut = true,
         env = envs
       )
+
       System.err.write(res.out.bytes)
       val ghSecrets = res.out.text()
         .linesIterator
@@ -115,6 +116,7 @@ class PublishSetupTests extends ScalaCliSuite {
       val directives0 = directives(os.read(root / projDir / "publish-conf.scala"))
       expect(directives0 == expectedDirectives)
       expect(ghSecrets == expectedGhSecrets)
+      expect(res.out.text().contains("would upload key"))
     }
   }
 
@@ -153,6 +155,7 @@ class PublishSetupTests extends ScalaCliSuite {
       val directives0 = directives(os.read(root / projDir / "publish-conf.scala"))
       expect(directives0 == expectedDirectives)
       expect(ghSecrets == expectedGhSecrets)
+      expect(res.out.text().contains("would upload key"))
     }
   }
 
