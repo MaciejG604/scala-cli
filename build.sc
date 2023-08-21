@@ -839,6 +839,10 @@ trait Cli extends SbtModule with ProtoBuildModule with CliLaunchers
 
   def localRepoJar = `local-repo`.localRepoJar()
 
+  def forkArgs = T {
+    super.forkArgs() ++ Seq("-agentlib:jdwp=transport=dt_socket,server=y,address=localhost:5050,suspend=y")
+  }
+
   object test extends ScalaCliTests with ScalaCliScalafixModule {
     def moduleDeps = super.moduleDeps ++ Seq(
       `build-module`.test
