@@ -23,10 +23,12 @@ scala-cli Test.scala --js
 
 ## Dependencies
 
-This section is currently a work in progress, but here are some initial notes:
-
-- Beware platform dependencies
-- `run` / `test` / `package` should all work
+Not all Scala libraries have their Scala.js equivalent, to see which of them do consult the [Scala.js documentation](https://www.scala-js.org/libraries/libs.html).
+Declaring dependencies requires a slightly different format than the usual, the second delimiter is `::` instead of `:`.
+E.g. `com.lihaoyi::upickle::3.1.3` instead of `com.lihaoyi:upickle_2.13:3.1.3`:
+```bash ignore
+scala-cli dep com.lihaoyi::upickle::3.1.3 --js .
+```
 
 ## Package
 
@@ -53,6 +55,19 @@ node hello.js
 <!-- Expected:
 Hello World from Scala.js
 -->
+
+### Optimisation Mode
+
+Scala.js supports different [optimisation modes](https://www.scala-js.org/doc/project/building.html).
+To configure them Scala CLI provides both flags and using directives:
+- `--js-mode` or `using jsMode` to choose between fastLinkJs and fullLinkJs
+
+  |         | fastLinkJs            | fullLinkJs                |
+  |---------|-----------------------|---------------------------|
+  | Aliases | fast, fastLinkJs, dev | full, fullLinkJs, release |
+  | Example | `using jsMode fast`   | `--js-mode full`          |
+
+- `--js-no-opt` or `using jsNoOpt` to disable optimisation, this will override the mode option
 
 ### Module Split Style
 
