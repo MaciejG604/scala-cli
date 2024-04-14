@@ -7,7 +7,8 @@ import scala.build.internal.WrapperParams
  * 
  * @param generated - path to the file created by Scala CLI
  * @param reportingPath - the origin of the source:
- *  - Right(String): there's no path that corresponds to the source it may be a snippet or a gist etc.
+ *  - Left(String): there's no path that corresponds to the source it may be a snippet or a gist etc.
+ *  - Right(os.Path): this source has been generated based on a file at this path
  * @param wrapperParamsOpt - if the generated source is a script wrapper then the params are present here
  */
 final case class GeneratedSource(
