@@ -6,16 +6,10 @@ import org.scalajs.logging.{NullLogger, Logger as ScalaJsLogger}
 
 import java.util.concurrent.TimeUnit
 import scala.build.Ops.*
+import scala.build.bsp.buildtargets.ProjectName
 import scala.build.{Build, BuildThreads, Directories, GeneratedSource, LocalRepo}
 import scala.build.options.{BuildOptions, InternalOptions, Scope}
-import scala.build.bsp.{
-  BspServer,
-  ScalaScriptBuildServer,
-  WrappedSourceItem,
-  WrappedSourcesItem,
-  WrappedSourcesParams,
-  WrappedSourcesResult
-}
+import scala.build.bsp.{BspServer, ScalaScriptBuildServer, WrappedSourceItem, WrappedSourcesItem, WrappedSourcesParams, WrappedSourcesResult}
 import scala.collection.mutable.ArrayBuffer
 import scala.jdk.CollectionConverters.*
 import scala.build.bsp.{WrappedSourcesItem, WrappedSourcesResult}
@@ -32,13 +26,13 @@ class BspServerTests extends TestUtil.ScalaCliBuildSuite {
   val buildThreads = BuildThreads.create()
 
   def getScriptBuildServer(
+    projectName: ProjectName,
     generatedSources: Seq[GeneratedSource],
     workspace: os.Path,
     scope: Scope = Scope.Main
   ): ScalaScriptBuildServer = {
     val bspServer = new BspServer(null, null, null)
-    bspServer.setGeneratedSources(Scope.Main, generatedSources)
-    bspServer.setProjectName(workspace, "test", scope)
+    bspServer.addTarget(projectName, workspace, "test", scope, generatedSources)
 
     bspServer
   }
@@ -53,7 +47,7 @@ class BspServerTests extends TestUtil.ScalaCliBuildSuite {
     )
 
     testInputs.withBuild(baseOptions, buildThreads, None) {
-      (root, _, maybeBuild) =>
+      (root, inputs, maybeBuild) =>
         val build: Build = maybeBuild.orThrow
 
         build match {
@@ -67,7 +61,7 @@ class BspServerTests extends TestUtil.ScalaCliBuildSuite {
               .take(wrappedScript.wrapperParamsOpt.map(_.topWrapperLineCount).getOrElse(0))
               .mkString("", System.lineSeparator(), System.lineSeparator())
 
-            val bspServer = getScriptBuildServer(generatedSources, root)
+            val bspServer = getScriptBuildServer(inputs.projectName, generatedSources, root)
 
             val wrappedSourcesResult: WrappedSourcesResult = bspServer
               .buildTargetWrappedSources(new WrappedSourcesParams(ArrayBuffer.empty.asJava))

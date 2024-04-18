@@ -8,8 +8,8 @@ import java.lang.Boolean as JBoolean
 import java.net.URI
 import java.nio.file.Paths
 import java.util.concurrent.{ConcurrentHashMap, ExecutorService}
-
 import scala.build.Position.File
+import scala.build.bsp.buildtargets.{ManagesBuildTargets, ManagesBuildTargetsImpl}
 import scala.build.bsp.protocol.TextEdit
 import scala.build.errors.{BuildException, CompositeBuildException, Diagnostic, Severity}
 import scala.build.internal.util.WarningMessages
@@ -21,7 +21,7 @@ class BspClient(
   @volatile var logger: Logger,
   var forwardToOpt: Option[b.BuildClient] = None
 ) extends b.BuildClient with BuildClientForwardStubs with BloopBuildClient
-    with HasGeneratedSourcesImpl {
+    with ManagesBuildTargetsImpl {
 
   private def updatedPublishDiagnosticsParams(
     params: b.PublishDiagnosticsParams,
@@ -53,9 +53,9 @@ class BspClient(
 
               scalaDiagnostic.getActions().asScala.foreach { action =>
                 for {
-                  change    <- action.getEdit().getChanges().asScala
+                  change <- action.getEdit().getChanges().asScala
                   startLine <- updateLine(change.getRange.getStart.getLine)
-                  endLine   <- updateLine(change.getRange.getEnd.getLine)
+                  endLine <- updateLine(change.getRange.getEnd.getLine)
                 } yield {
                   change.getRange().getStart.setLine(startLine)
                   change.getRange().getEnd.setLine(endLine)
@@ -96,9 +96,10 @@ class BspClient(
   }
 
   private def actualBuildPublishDiagnostics(params: b.PublishDiagnosticsParams): Unit = {
-    val updatedParamsOpt = targetScopeOpt(params.getBuildTarget).flatMap { scope =>
-      generatedSources.getOrElse(scope, HasGeneratedSources.GeneratedSources(Nil))
-        .uriMap
+    val updatedParamsOpt = targetProjectNameOpt(params.getBuildTarget).flatMap { projectName =>
+      val uriMap = managedTargets(projectName).uriMap
+
+      uriMap
         .get(params.getTextDocument.getUri)
         .map { genSource =>
           updatedPublishDiagnosticsParams(params, genSource)
