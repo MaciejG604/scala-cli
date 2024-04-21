@@ -21,6 +21,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -59,6 +60,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -87,6 +89,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -112,6 +115,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -137,6 +141,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          fetch-tags: true
       - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
         with:
           jvm: "temurin:17"
@@ -162,6 +167,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          fetch-tags: true
       - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
         with:
           jvm: "temurin:17"
@@ -187,6 +193,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -214,6 +221,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -247,6 +255,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -280,6 +289,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -313,6 +323,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          fetch-tags: true
       - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
         with:
           jvm: "temurin:17"
@@ -346,6 +357,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          fetch-tags: true
       - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
         with:
           jvm: "temurin:17"
@@ -378,6 +390,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          fetch-tags: true
       - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
         with:
           apps: ""
@@ -401,6 +414,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -428,6 +442,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -461,6 +476,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -494,6 +510,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -527,6 +544,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          fetch-tags: true
       - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
         with:
           jvm: "temurin:17"
@@ -560,6 +578,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          fetch-tags: true
       - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
         with:
           jvm: "temurin:17"
@@ -593,6 +612,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          fetch-tags: true
       - uses: coursier/setup-action@7bde40eee928896f074dbb76d22dd772eed5c65f
         with:
           apps: ""
@@ -622,6 +642,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          fetch-tags: true
       - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
         env:
           COURSIER_BIN_DIR: ${{ github.workspace }}/cs/bin # necessary for our M1 runner setup
@@ -655,6 +676,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -687,6 +709,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -728,6 +751,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -769,6 +793,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
@@ -810,6 +835,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          fetch-tags: true
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -851,6 +877,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          fetch-tags: true
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -891,6 +918,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -915,6 +943,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -962,6 +991,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -995,6 +1025,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -1028,6 +1059,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          fetch-tags: true
       - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
         with:
           jvm: "temurin:17"
@@ -1061,6 +1093,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          fetch-tags: true
       - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
         with:
           jvm: "temurin:17"
@@ -1094,6 +1127,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -1118,6 +1152,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -1165,6 +1200,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -1200,6 +1236,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -1235,6 +1272,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          fetch-tags: true
       - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
         with:
           jvm: "temurin:17"
@@ -1270,6 +1308,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          fetch-tags: true
       - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
         with:
           jvm: "temurin:17"
@@ -1304,6 +1343,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "zulu:17"
@@ -1332,6 +1372,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -1357,6 +1398,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -1371,6 +1413,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -1391,6 +1434,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -1413,6 +1457,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -1428,6 +1473,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -1448,6 +1494,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
         ssh-key: ${{ secrets.SSH_PRIVATE_KEY_SCALA_CLI }}
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
@@ -1523,6 +1570,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
@@ -1582,6 +1630,7 @@ jobs:
         with:
           fetch-depth: 0
           submodules: true
+          fetch-tags: true
       - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
         with:
           jvm: "temurin:17"
@@ -1665,6 +1714,7 @@ jobs:
       with:
         fetch-depth: 0
         submodules: true
+        fetch-tags: true
     - uses: VirtusLab/scala-cli-setup@5b1a6c5ca98b5642996812781f6ad9b2d5935f85
       with:
         jvm: "temurin:17"
