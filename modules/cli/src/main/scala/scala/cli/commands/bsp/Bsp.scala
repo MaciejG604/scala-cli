@@ -66,7 +66,7 @@ object Bsp extends ScalaCommand[BspOptions] {
           val sharedOptions   = getSharedOptions()
           val launcherOptions = getLauncherOptions()
           val envs            = getEnvsFromFile()
-          val initialInputs   = value(sharedOptions.inputs(argsSeq, () => Inputs.default()))
+          val initialInputs   = value(sharedOptions.inputs(argsSeq))
 
           if (sharedOptions.logging.verbosity >= 3)
             pprint.err.log(initialInputs)
