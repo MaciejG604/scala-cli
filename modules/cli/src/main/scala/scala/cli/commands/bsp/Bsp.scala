@@ -8,7 +8,7 @@ import scala.build.EitherCps.{either, value}
 import scala.build.*
 import scala.build.bsp.{BspReloadableOptions, BspThreads}
 import scala.build.errors.BuildException
-import scala.build.input.Inputs
+import scala.build.input.ModuleInputs
 import scala.build.options.{BuildOptions, Scope}
 import scala.cli.commands.ScalaCommand
 import scala.cli.commands.publish.ConfigUtil.*
@@ -82,7 +82,7 @@ object Bsp extends ScalaCommand[BspOptions] {
 
     refreshPowerMode(getLauncherOptions(), getSharedOptions(), getEnvsFromFile())
 
-    val preprocessInputs: Seq[String] => Either[BuildException, (Inputs, BuildOptions)] =
+    val preprocessInputs: Seq[String] => Either[BuildException, (ModuleInputs, BuildOptions)] =
       argsSeq =>
         either {
           val sharedOptions   = getSharedOptions()
@@ -99,7 +99,7 @@ object Bsp extends ScalaCommand[BspOptions] {
           val latestLogger     = sharedOptions.logging.logger
           val persistentLogger = new PersistentDiagnosticLogger(latestLogger)
 
-          val crossResult = CrossSources.forInputs(
+          val crossResult = CrossSources.forModuleInputs(
             initialInputs,
             Sources.defaultPreprocessors(
               baseOptions.archiveCache,
