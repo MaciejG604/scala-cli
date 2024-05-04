@@ -8,7 +8,7 @@ import org.scalajs.logging.{NullLogger, Logger as ScalaJsLogger}
 import java.io.PrintStream
 import scala.build.Ops.*
 import scala.build.errors.{BuildException, Diagnostic, Severity}
-import scala.build.input.Inputs
+import scala.build.input.ModuleInputs
 import scala.build.internals.FeatureType
 import scala.build.options.{
   BuildOptions,
@@ -86,7 +86,7 @@ class BuildProjectTests extends TestUtil.ScalaCliBuildSuite {
       )
     )
 
-    val inputs    = Inputs.empty("project")
+    val inputs    = ModuleInputs.empty("project")
     val sources   = Sources(Nil, Nil, None, Nil, options)
     val logger    = new LoggerMock()
     val artifacts = options.artifacts(logger, Scope.Test).orThrow
@@ -173,7 +173,7 @@ class BuildProjectTests extends TestUtil.ScalaCliBuildSuite {
         LocalRepo.localRepo(scala.build.Directories.default().localRepoDir)
       )
     )
-    val inputs    = Inputs.empty("project")
+    val inputs    = ModuleInputs.empty("project")
     val sources   = Sources(Nil, Nil, None, Nil, options)
     val logger    = new LoggerMock()
     val artifacts = options.artifacts(logger, Scope.Test).orThrow

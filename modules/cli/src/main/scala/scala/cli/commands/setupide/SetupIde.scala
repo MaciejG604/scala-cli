@@ -12,7 +12,7 @@ import scala.build.EitherCps.{either, value}
 import scala.build.*
 import scala.build.bsp.IdeInputs
 import scala.build.errors.{BuildException, WorkspaceError}
-import scala.build.input.{Inputs, OnDisk, Virtual, WorkspaceOrigin}
+import scala.build.input.{ModuleInputs, OnDisk, Virtual, WorkspaceOrigin}
 import scala.build.internal.Constants
 import scala.build.options.{BuildOptions, Scope}
 import scala.cli.CurrentParams
@@ -25,7 +25,7 @@ import scala.jdk.CollectionConverters.*
 object SetupIde extends ScalaCommand[SetupIdeOptions] {
 
   def downloadDeps(
-    inputs: Inputs,
+    inputs: ModuleInputs,
     options: BuildOptions,
     logger: Logger
   ): Either[BuildException, Artifacts] = {
@@ -33,7 +33,7 @@ object SetupIde extends ScalaCommand[SetupIdeOptions] {
     // ignoring errors related to sources themselves
     val maybeSourceBuildOptions = either {
       val (crossSources, allInputs) = value {
-        CrossSources.forInputs(
+        CrossSources.forModuleInputs(
           inputs,
           Sources.defaultPreprocessors(
             options.archiveCache,
@@ -83,7 +83,7 @@ object SetupIde extends ScalaCommand[SetupIdeOptions] {
 
   def runSafe(
     options: SharedOptions,
-    inputs: Inputs,
+    inputs: ModuleInputs,
     logger: Logger,
     buildOptions: BuildOptions,
     previousCommandName: Option[String],
@@ -105,7 +105,7 @@ object SetupIde extends ScalaCommand[SetupIdeOptions] {
 
   private def writeBspConfiguration(
     options: SetupIdeOptions,
-    inputs: Inputs,
+    inputs: ModuleInputs,
     buildOptions: BuildOptions,
     previousCommandName: Option[String],
     args: Seq[String]

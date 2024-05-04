@@ -13,7 +13,7 @@ import java.util.zip.ZipFile
 import scala.build.EitherCps.{either, value}
 import scala.build.*
 import scala.build.errors.{BuildException, CantDownloadAmmoniteError, FetchingDependenciesError}
-import scala.build.input.Inputs
+import scala.build.input.ModuleInputs
 import scala.build.internal.{Constants, Runner}
 import scala.build.options.{BuildOptions, JavaOpt, MaybeScalaVersion, Scope}
 import scala.cli.commands.publish.ConfigUtil.*
@@ -103,8 +103,8 @@ object Repl extends ScalaCommand[ReplOptions] {
 
   override def runCommand(options: ReplOptions, args: RemainingArgs, logger: Logger): Unit = {
     val initialBuildOptions = buildOptionsOrExit(options)
-    def default = Inputs.default().getOrElse {
-      Inputs.empty(Os.pwd, options.shared.markdown.enableMarkdown)
+    def default = ModuleInputs.default().getOrElse {
+      ModuleInputs.empty(Os.pwd, options.shared.markdown.enableMarkdown)
     }
     val inputs =
       options.shared.inputs(args.remaining, defaultInputs = () => Some(default)).orExit(logger)
