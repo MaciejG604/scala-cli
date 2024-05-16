@@ -1015,7 +1015,8 @@ object Build {
       resourceDirs = sources.resourceDirs,
       scope = scope,
       javaHomeOpt = Option(options.javaHomeLocation().value),
-      javacOptions = javacOptions
+      javacOptions = javacOptions,
+      moduleDependencies = inputs.moduleDependencies
     )
     project
   }
