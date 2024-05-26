@@ -12,6 +12,7 @@ import org.eclipse.lsp4j.jsonrpc.messages.ResponseError
 import java.net.URI
 import java.nio.file.Paths
 import java.util.concurrent.{ExecutorService, ScheduledExecutorService}
+
 import scala.annotation.tailrec
 import scala.async.Async.{async, await}
 import scala.cli.integration.compose.ComposeBspTestDefinitions
