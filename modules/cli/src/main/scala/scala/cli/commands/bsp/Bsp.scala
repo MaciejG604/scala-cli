@@ -165,8 +165,6 @@ object Bsp extends ScalaCommand[BspOptions] {
       val sharedOptions   = getSharedOptions()
       val launcherOptions = getLauncherOptions()
       val envs            = getEnvsFromFile()
-      val bloopRifleConfig = sharedOptions.bloopRifleConfig(Some(finalBuildOptions))
-        .orExit(sharedOptions.logger)
       refreshPowerMode(launcherOptions, sharedOptions, envs)
 
       BspReloadableOptions(
