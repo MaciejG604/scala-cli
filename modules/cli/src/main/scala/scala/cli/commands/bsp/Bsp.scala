@@ -112,21 +112,23 @@ object Bsp extends ScalaCommand[BspOptions] {
 
     // TODO reported override option values
     // FIXME Only some options need to be unified for the whole project, like scala version, JVM
-    val finalBuildOptions = inputsAndBuildOptions.map(_._2).reduceLeft(_ orElse _)
+    val combinedBuildOptions = inputsAndBuildOptions.map(_._2).reduceLeft(_ orElse _)
     val inputs            = inputsAndBuildOptions.map(_._1)
 
     if (options.shared.logging.verbosity >= 3)
-      pprint.err.log(finalBuildOptions)
+      pprint.err.log(combinedBuildOptions)
 
-    /** values used for lauching the bsp, especially for launching a bloop server, they include
-      * options extracted from sources
+    // FIXME  Why do we need shared options to be combined with combinedBuildOptions to pass BspTestsDefault.test workspace update after adding file to main scope ???
+    /** values used for launching the bsp, especially for launching a bloop server, they include
+      * options extracted from sources in the bloop rifle config and in buildOptions
       */
     val initialBspOptions = {
       val sharedOptions   = getSharedOptions()
       val launcherOptions = getLauncherOptions()
       val envs            = getEnvsFromFile()
       val bspBuildOptions = buildOptions(sharedOptions, launcherOptions, envs)
-        .orElse(finalBuildOptions)
+        .orElse(combinedBuildOptions)
+
       BspReloadableOptions(
         buildOptions = bspBuildOptions,
         bloopRifleConfig = sharedOptions.bloopRifleConfig(Some(bspBuildOptions))
