@@ -24,9 +24,10 @@ import scala.build.bsp.buildtargets.ProjectName
 import scala.build.compiler.{BloopCompilerMaker, ScalaCompilerMaker, SimpleScalaCompilerMaker}
 import scala.build.directives.DirectiveDescription
 import scala.build.errors.{AmbiguousPlatformError, BuildException, ConfigDbException, Severity}
+import scala.build.input.compose
+import scala.build.input.compose.InputsComposer
 import scala.build.input.{
   Element,
-  InputsComposer,
   ModuleInputs,
   ResourceDirectory,
   ScalaCliInvokeData
@@ -633,7 +634,7 @@ final case class SharedOptions(
   def composeInputs(
     args: Seq[String],
     defaultInputs: () => Option[ModuleInputs] = () => ModuleInputs.default()
-  )(using ScalaCliInvokeData): Either[BuildException, Seq[ModuleInputs]] = {
+  )(using ScalaCliInvokeData): Either[BuildException, compose.Inputs] = {
     val updatedModuleInputsFromArgs
       : (Seq[String], Option[ProjectName]) => Either[BuildException, ModuleInputs] =
       (args, projectNameOpt) =>
@@ -647,7 +648,7 @@ final case class SharedOptions(
       Os.pwd,
       updatedModuleInputsFromArgs,
       ScalaCli.allowRestrictedFeatures
-    ).getModuleInputs
+    ).getInputs
   }
 
   def inputs(

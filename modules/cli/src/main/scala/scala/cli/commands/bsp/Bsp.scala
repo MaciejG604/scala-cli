@@ -6,6 +6,7 @@ import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 
 import scala.build.EitherCps.{either, value}
 import scala.build.*
+import scala.build.input.compose
 import scala.build.bsp.{BspReloadableOptions, BspThreads}
 import scala.build.errors.BuildException
 import scala.build.input.ModuleInputs
@@ -82,7 +83,7 @@ object Bsp extends ScalaCommand[BspOptions] {
 
     refreshPowerMode(getLauncherOptions(), getSharedOptions(), getEnvsFromFile())
 
-    val preprocessInputs: Seq[String] => Either[BuildException, Seq[(ModuleInputs, BuildOptions)]] =
+    val preprocessInputs: Seq[String] => Either[BuildException, (compose.Inputs, Seq[BuildOptions])] =
       argsSeq =>
         either {
           val sharedOptions   = getSharedOptions()
@@ -95,12 +96,12 @@ object Bsp extends ScalaCommand[BspOptions] {
           val latestLogger     = sharedOptions.logging.logger
           val persistentLogger = new PersistentDiagnosticLogger(latestLogger)
 
-          val initialInputs: Seq[ModuleInputs] = value(sharedOptions.composeInputs(argsSeq))
+          val initialInputs: compose.Inputs = value(sharedOptions.composeInputs(argsSeq))
 
           if (sharedOptions.logging.verbosity >= 3)
             pprint.err.log(initialInputs)
 
-          for (moduleInputs <- initialInputs) yield {
+          initialInputs.preprocessInputs { moduleInputs =>
             val crossResult = CrossSources.forModuleInputs(
               moduleInputs,
               Sources.defaultPreprocessors(
@@ -136,8 +137,8 @@ object Bsp extends ScalaCommand[BspOptions] {
 
     // TODO reported override option values
     // FIXME Only some options need to be unified for the whole project, like scala version, JVM
-    val combinedBuildOptions = inputsAndBuildOptions.map(_._2).reduceLeft(_ orElse _)
-    val inputs            = inputsAndBuildOptions.map(_._1)
+    val combinedBuildOptions = inputsAndBuildOptions._2.reduceLeft(_ orElse _)
+    val inputs            = inputsAndBuildOptions._1
 
     if (options.shared.logging.verbosity >= 3)
       pprint.err.log(combinedBuildOptions)
@@ -151,13 +152,9 @@ object Bsp extends ScalaCommand[BspOptions] {
       val launcherOptions = getLauncherOptions()
       val envs            = getEnvsFromFile()
       val bspBuildOptions = buildOptions(sharedOptions, launcherOptions, envs)
-<<<<<<< HEAD
-        .orElse(finalBuildOptions)
-      refreshPowerMode(launcherOptions, sharedOptions, envs)
-=======
         .orElse(combinedBuildOptions)
+      refreshPowerMode(launcherOptions, sharedOptions, envs)
 
->>>>>>> cf44243b7 (Add mechanism for picking the highest java version for bloop, add docs, add fixme)
       BspReloadableOptions(
         buildOptions = bspBuildOptions,
         bloopRifleConfig = sharedOptions.bloopRifleConfig(Some(bspBuildOptions))
@@ -181,14 +178,12 @@ object Bsp extends ScalaCommand[BspOptions] {
       )
     }
 
-    CurrentParams.workspaceOpt =
-      Some(inputs.head.workspace) // FIXME .head, introduce better types for Seq[ModuleInputs] that will have a common workspace
-    val actionableDiagnostics =
-      options.shared.logging.verbosityOptions.actions
+    CurrentParams.workspaceOpt = Some(inputs.workspace)
+    val actionableDiagnostics = options.shared.logging.verbosityOptions.actions
 
     BspThreads.withThreads { threads =>
       val bsp = scala.build.bsp.Bsp.create(
-        preprocessInputs.andThen(_.map(_.map(_._1))),
+        preprocessInputs.andThen(_.map(_._1)),
         bspReloadableOptionsReference,
         threads,
         System.in,
