@@ -1,6 +1,6 @@
 package scala.cli.integration
 
-import ch.epfl.scala.bsp4j.{BuildTargetIdentifier, JvmTestEnvironmentParams}
+import ch.epfl.scala.bsp4j.{BuildTargetEvent, BuildTargetIdentifier, JvmTestEnvironmentParams}
 import ch.epfl.scala.bsp4j as b
 import com.eed3si9n.expecty.Expecty.expect
 import com.github.plokhotnyuk.jsoniter_scala.core.*
@@ -15,6 +15,7 @@ import java.util.concurrent.{ExecutorService, ScheduledExecutorService}
 
 import scala.annotation.tailrec
 import scala.async.Async.{async, await}
+import scala.cli.integration.compose.ComposeBspTestDefinitions
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.*
 import scala.concurrent.{Await, Future, Promise}
@@ -23,7 +24,8 @@ import scala.util.control.NonFatal
 import scala.util.{Failure, Properties, Success, Try}
 
 abstract class BspTestDefinitions extends ScalaCliSuite with TestScalaVersionArgs
-    with ScriptWrapperTestDefinitions {
+    with ScriptWrapperTestDefinitions
+    with ComposeBspTestDefinitions {
   _: TestScalaVersion =>
   protected lazy val extraOptions: Seq[String] = scalaVersionArgs ++ TestUtil.extraOptions
 
@@ -173,7 +175,7 @@ abstract class BspTestDefinitions extends ScalaCliSuite with TestScalaVersionArg
     expect(expectedPrefixes.exists(uri.startsWith))
   }
 
-  private def readBspConfig(root: os.Path): Details = {
+  def readBspConfig(root: os.Path): Details = {
     val bspFile = root / ".bsp" / "scala-cli.json"
     expect(os.isFile(bspFile))
     val content = os.read.bytes(bspFile)
@@ -509,8 +511,9 @@ abstract class BspTestDefinitions extends ScalaCliSuite with TestScalaVersionArg
         expect(compileResp.getStatusCode == b.StatusCode.ERROR)
 
         val diagnosticsParams = {
-          val diagnostics = localClient.diagnostics()
-          val params      = diagnostics(2)
+          val diagnostics = localClient.latestDiagnostics()
+          expect(diagnostics.isDefined)
+          val params = diagnostics.get
           expect(params.getBuildTarget.getUri == targetUri)
           expect(
             TestUtil.normalizeUri(params.getTextDocument.getUri) ==
@@ -764,7 +767,12 @@ abstract class BspTestDefinitions extends ScalaCliSuite with TestScalaVersionArg
         val changes = didChangeParams.getChanges.asScala.toSeq
         expect(changes.length == 2)
 
-        val change = changes.head
+        val change: BuildTargetEvent = {
+          val targets = changes.map(_.getTarget)
+          expect(targets.length == 2)
+          val mainTarget = extractMainTargets(targets)
+          changes.find(_.getTarget == mainTarget).get
+        }
         expect(change.getTarget.getUri == targetUri)
         expect(change.getKind == b.BuildTargetEventKind.CHANGED)
 
@@ -880,7 +888,12 @@ abstract class BspTestDefinitions extends ScalaCliSuite with TestScalaVersionArg
         val changes = didChangeParams.getChanges.asScala.toSeq
         expect(changes.length == 2)
 
-        val change = changes.head
+        val change: BuildTargetEvent = {
+          val targets = changes.map(_.getTarget)
+          expect(targets.length == 2)
+          val mainTarget = extractMainTargets(targets)
+          changes.find(_.getTarget == mainTarget).get
+        }
         expect(change.getTarget.getUri == targetUri)
         expect(change.getKind == b.BuildTargetEventKind.CHANGED)
       }
@@ -2218,12 +2231,12 @@ abstract class BspTestDefinitions extends ScalaCliSuite with TestScalaVersionArg
 }
 
 object BspTestDefinitions {
-  private final case class Details(
+  final case class Details(
     name: String,
     version: String,
     bspVersion: String,
     argv: List[String],
     languages: List[String]
   )
-  private val detailsCodec: JsonValueCodec[Details] = JsonCodecMaker.make
+  val detailsCodec: JsonValueCodec[Details] = JsonCodecMaker.make
 }

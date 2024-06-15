@@ -12,6 +12,7 @@ import java.util.concurrent.{ScheduledExecutorService, ScheduledFuture}
 import scala.annotation.tailrec
 import scala.build.EitherCps.{either, value}
 import scala.build.Ops.*
+import scala.build.bsp.buildtargets.ProjectName
 import scala.build.compiler.{ScalaCompiler, ScalaCompilerMaker}
 import scala.build.errors.*
 import scala.build.input.VirtualScript.VirtualScriptNameRegex
@@ -29,7 +30,7 @@ import scala.util.control.NonFatal
 import scala.util.{Properties, Try}
 
 trait Build {
-  def inputs: Inputs
+  def inputs: Module
   def options: BuildOptions
   def scope: Scope
   def outputOpt: Option[os.Path]
@@ -42,17 +43,17 @@ trait Build {
 object Build {
 
   final case class Successful(
-    inputs: Inputs,
-    options: BuildOptions,
-    scalaParams: Option[ScalaParameters],
-    scope: Scope,
-    sources: Sources,
-    artifacts: Artifacts,
-    project: Project,
-    output: os.Path,
-    diagnostics: Option[Seq[(Either[String, os.Path], bsp4j.Diagnostic)]],
-    generatedSources: Seq[GeneratedSource],
-    isPartial: Boolean
+                               inputs: Module,
+                               options: BuildOptions,
+                               scalaParams: Option[ScalaParameters],
+                               scope: Scope,
+                               sources: Sources,
+                               artifacts: Artifacts,
+                               project: Project,
+                               output: os.Path,
+                               diagnostics: Option[Seq[(Either[String, os.Path], bsp4j.Diagnostic)]],
+                               generatedSources: Seq[GeneratedSource],
+                               isPartial: Boolean
   ) extends Build {
     def success: Boolean                  = true
     def successfulOpt: Some[this.type]    = Some(this)
@@ -165,13 +166,13 @@ object Build {
   }
 
   final case class Failed(
-    inputs: Inputs,
-    options: BuildOptions,
-    scope: Scope,
-    sources: Sources,
-    artifacts: Artifacts,
-    project: Project,
-    diagnostics: Option[Seq[(Either[String, os.Path], bsp4j.Diagnostic)]]
+                           inputs: Module,
+                           options: BuildOptions,
+                           scope: Scope,
+                           sources: Sources,
+                           artifacts: Artifacts,
+                           project: Project,
+                           diagnostics: Option[Seq[(Either[String, os.Path], bsp4j.Diagnostic)]]
   ) extends Build {
     def success: Boolean         = false
     def successfulOpt: None.type = None
@@ -179,10 +180,10 @@ object Build {
   }
 
   final case class Cancelled(
-    inputs: Inputs,
-    options: BuildOptions,
-    scope: Scope,
-    reason: String
+                              inputs: Module,
+                              options: BuildOptions,
+                              scope: Scope,
+                              reason: String
   ) extends Build {
     def success: Boolean         = false
     def successfulOpt: None.type = None
@@ -194,10 +195,10 @@ object Build {
     * Using only the command-line options not the ones from the sources.
     */
   def updateInputs(
-    inputs: Inputs,
-    options: BuildOptions,
-    testOptions: Option[BuildOptions] = None
-  ): Inputs = {
+                    inputs: Module,
+                    options: BuildOptions,
+                    testOptions: Option[BuildOptions] = None
+  ): Module = {
 
     // If some options are manually overridden, append a hash of the options to the project name
     // Using options, not options0 - only the command-line options are taken into account. No hash is
@@ -214,20 +215,20 @@ object Build {
   }
 
   private def build(
-    inputs: Inputs,
-    options: BuildOptions,
-    logger: Logger,
-    buildClient: BloopBuildClient,
-    compiler: ScalaCompiler,
-    docCompilerOpt: Option[ScalaCompiler],
-    crossBuilds: Boolean,
-    buildTests: Boolean,
-    partial: Option[Boolean],
-    actionableDiagnostics: Option[Boolean]
+                     inputs: Module,
+                     options: BuildOptions,
+                     logger: Logger,
+                     buildClient: BloopBuildClient,
+                     compiler: ScalaCompiler,
+                     docCompilerOpt: Option[ScalaCompiler],
+                     crossBuilds: Boolean,
+                     buildTests: Boolean,
+                     partial: Option[Boolean],
+                     actionableDiagnostics: Option[Boolean]
   )(using ScalaCliInvokeData): Either[BuildException, Builds] = either {
     // allInputs contains elements from using directives
     val (crossSources, allInputs) = value {
-      CrossSources.forInputs(
+      CrossSources.forModuleInputs(
         inputs,
         Sources.defaultPreprocessors(
           options.archiveCache,
@@ -242,7 +243,7 @@ object Build {
     val sharedOptions = crossSources.sharedOptions(options)
     val crossOptions  = sharedOptions.crossOptions
 
-    def doPostProcess(build: Build, inputs: Inputs, scope: Scope): Unit = build match {
+    def doPostProcess(build: Build, inputs: Module, scope: Scope): Unit = build match {
       case build: Build.Successful =>
         for (sv <- build.project.scalaCompiler.map(_.scalaVersion))
           postProcess(
@@ -271,6 +272,11 @@ object Build {
 
       val baseOptions = overrideOptions.orElse(sharedOptions)
 
+      val inputs0 = updateInputs(
+        allInputs,
+        overrideOptions.orElse(options) // update hash in inputs with options coming from the CLI or cross-building, not from the sources
+      )
+
       val scopedSources = value(crossSources.scopedSources(baseOptions))
 
       val mainSources =
@@ -280,12 +286,6 @@ object Build {
       val testSources =
         value(scopedSources.sources(Scope.Test, baseOptions, allInputs.workspace, logger))
       val testOptions = testSources.buildOptions
-
-      val inputs0 = updateInputs(
-        allInputs,
-        mainOptions, // update hash in inputs with options coming from the CLI or cross-building, not from the sources
-        Some(testOptions).filter(_ != mainOptions)
-      )
 
       def doBuildScope(
         options: BuildOptions,
@@ -421,17 +421,17 @@ object Build {
   }
 
   private def build(
-    inputs: Inputs,
-    sources: Sources,
-    generatedSources: Seq[GeneratedSource],
-    options: BuildOptions,
-    scope: Scope,
-    logger: Logger,
-    buildClient: BloopBuildClient,
-    compiler: ScalaCompiler,
-    buildTests: Boolean,
-    partial: Option[Boolean],
-    actionableDiagnostics: Option[Boolean]
+                     inputs: Module,
+                     sources: Sources,
+                     generatedSources: Seq[GeneratedSource],
+                     options: BuildOptions,
+                     scope: Scope,
+                     logger: Logger,
+                     buildClient: BloopBuildClient,
+                     compiler: ScalaCompiler,
+                     buildTests: Boolean,
+                     partial: Option[Boolean],
+                     actionableDiagnostics: Option[Boolean]
   )(using ScalaCliInvokeData): Either[BuildException, Build] = either {
 
     val build0 = value {
@@ -473,24 +473,29 @@ object Build {
     }
   }
 
-  def projectRootDir(root: os.Path, projectName: String): os.Path =
-    root / Constants.workspaceDirName / projectName
-  def classesRootDir(root: os.Path, projectName: String): os.Path =
+  def projectRootDir(root: os.Path, projectName: ProjectName): os.Path =
+    root / Constants.workspaceDirName / projectName.name
+  def classesRootDir(root: os.Path, projectName: ProjectName): os.Path =
     projectRootDir(root, projectName) / "classes"
-  def classesDir(root: os.Path, projectName: String, scope: Scope, suffix: String = ""): os.Path =
+  def classesDir(
+    root: os.Path,
+    projectName: ProjectName,
+    scope: Scope,
+    suffix: String = ""
+  ): os.Path =
     classesRootDir(root, projectName) / s"${scope.name}$suffix"
 
   def resourcesRegistry(
     root: os.Path,
-    projectName: String,
+    projectName: ProjectName,
     scope: Scope
   ): os.Path =
-    root / Constants.workspaceDirName / projectName / s"resources-${scope.name}"
+    root / Constants.workspaceDirName / projectName.name / s"resources-${scope.name}"
 
   def scalaNativeSupported(
-    options: BuildOptions,
-    inputs: Inputs,
-    logger: Logger
+                            options: BuildOptions,
+                            inputs: Module,
+                            logger: Logger
   ): Either[BuildException, Option[ScalaNativeCompatibilityError]] =
     either {
       val scalaParamsOpt = value(options.scalaParams)
@@ -547,15 +552,15 @@ object Build {
     }
 
   def build(
-    inputs: Inputs,
-    options: BuildOptions,
-    compilerMaker: ScalaCompilerMaker,
-    docCompilerMakerOpt: Option[ScalaCompilerMaker],
-    logger: Logger,
-    crossBuilds: Boolean,
-    buildTests: Boolean,
-    partial: Option[Boolean],
-    actionableDiagnostics: Option[Boolean]
+             inputs: Module,
+             options: BuildOptions,
+             compilerMaker: ScalaCompilerMaker,
+             docCompilerMakerOpt: Option[ScalaCompilerMaker],
+             logger: Logger,
+             crossBuilds: Boolean,
+             buildTests: Boolean,
+             partial: Option[Boolean],
+             actionableDiagnostics: Option[Boolean]
   )(using ScalaCliInvokeData): Either[BuildException, Builds] = {
     val buildClient = BloopBuildClient.create(
       logger,
@@ -620,16 +625,16 @@ object Build {
   }
 
   def watch(
-    inputs: Inputs,
-    options: BuildOptions,
-    compilerMaker: ScalaCompilerMaker,
-    docCompilerMakerOpt: Option[ScalaCompilerMaker],
-    logger: Logger,
-    crossBuilds: Boolean,
-    buildTests: Boolean,
-    partial: Option[Boolean],
-    actionableDiagnostics: Option[Boolean],
-    postAction: () => Unit = () => ()
+             inputs: Module,
+             options: BuildOptions,
+             compilerMaker: ScalaCompilerMaker,
+             docCompilerMakerOpt: Option[ScalaCompilerMaker],
+             logger: Logger,
+             crossBuilds: Boolean,
+             buildTests: Boolean,
+             partial: Option[Boolean],
+             actionableDiagnostics: Option[Boolean],
+             postAction: () => Unit = () => ()
   )(action: Either[BuildException, Builds] => Unit)(using ScalaCliInvokeData): Watcher = {
 
     val buildClient = BloopBuildClient.create(
@@ -810,15 +815,15 @@ object Build {
     *   a bloop [[Project]]
     */
   def buildProject(
-    inputs: Inputs,
-    sources: Sources,
-    generatedSources: Seq[GeneratedSource],
-    options: BuildOptions,
-    compilerJvmVersionOpt: Option[Positioned[Int]],
-    scope: Scope,
-    logger: Logger,
-    artifacts: Artifacts,
-    maybeRecoverOnError: BuildException => Option[BuildException] = e => Some(e)
+                    inputs: Module,
+                    sources: Sources,
+                    generatedSources: Seq[GeneratedSource],
+                    options: BuildOptions,
+                    compilerJvmVersionOpt: Option[Positioned[Int]],
+                    scope: Scope,
+                    logger: Logger,
+                    artifacts: Artifacts,
+                    maybeRecoverOnError: BuildException => Option[BuildException] = e => Some(e)
   ): Either[BuildException, Project] = either {
 
     val allSources = sources.paths.map(_._1) ++ generatedSources.map(_.generated)
@@ -952,10 +957,21 @@ object Build {
         List(classesDir(inputs.workspace, inputs.projectName, Scope.Main))
       else Nil
 
+    // `test` scope should contains class path to main scope
+    val modulesClassesPath = inputs.moduleDependencies.map { depProjectName =>
+      classesDir(inputs.workspace, depProjectName, Scope.Main)
+    } ++ {
+      if (scope == Scope.Test) inputs.moduleDependencies.map { depProjectName =>
+        classesDir(inputs.workspace, depProjectName, Scope.Test)
+      }
+      else Nil
+    }
+
     value(validate(logger, options))
 
     val fullClassPath = artifacts.compileClassPath ++
       mainClassesPath ++
+      modulesClassesPath ++
       artifacts.javacPluginDependencies.map(_._3) ++
       artifacts.extraJavacPlugins
 
@@ -982,22 +998,23 @@ object Build {
       resourceDirs = sources.resourceDirs,
       scope = scope,
       javaHomeOpt = Option(options.javaHomeLocation().value),
-      javacOptions = javacOptions
+      javacOptions = javacOptions,
+      moduleDependencies = inputs.moduleDependencies
     )
     project
   }
 
   def prepareBuild(
-    inputs: Inputs,
-    sources: Sources,
-    generatedSources: Seq[GeneratedSource],
-    options: BuildOptions,
-    compilerJvmVersionOpt: Option[Positioned[Int]],
-    scope: Scope,
-    compiler: ScalaCompiler,
-    logger: Logger,
-    buildClient: BloopBuildClient,
-    maybeRecoverOnError: BuildException => Option[BuildException] = e => Some(e)
+                    inputs: Module,
+                    sources: Sources,
+                    generatedSources: Seq[GeneratedSource],
+                    options: BuildOptions,
+                    compilerJvmVersionOpt: Option[Positioned[Int]],
+                    scope: Scope,
+                    compiler: ScalaCompiler,
+                    logger: Logger,
+                    buildClient: BloopBuildClient,
+                    maybeRecoverOnError: BuildException => Option[BuildException] = e => Some(e)
   ): Either[BuildException, (os.Path, Option[ScalaParameters], Artifacts, Project, Boolean)] =
     either {
 
@@ -1068,15 +1085,15 @@ object Build {
     }
 
   def buildOnce(
-    inputs: Inputs,
-    sources: Sources,
-    generatedSources: Seq[GeneratedSource],
-    options: BuildOptions,
-    scope: Scope,
-    logger: Logger,
-    buildClient: BloopBuildClient,
-    compiler: ScalaCompiler,
-    partialOpt: Option[Boolean]
+                 inputs: Module,
+                 sources: Sources,
+                 generatedSources: Seq[GeneratedSource],
+                 options: BuildOptions,
+                 scope: Scope,
+                 logger: Logger,
+                 buildClient: BloopBuildClient,
+                 compiler: ScalaCompiler,
+                 partialOpt: Option[Boolean]
   ): Either[BuildException, Build] = either {
 
     if (options.platform.value == Platform.Native)
@@ -1100,7 +1117,7 @@ object Build {
     }
 
     buildClient.clear()
-    buildClient.setGeneratedSources(scope, generatedSources)
+    buildClient.setGeneratedSources(inputs.scopeProjectName(scope), generatedSources)
 
     val partial = partialOpt.getOrElse {
       options.notForBloopOptions.packageOptions.packageTypeOpt.exists(_.sourceBased)
@@ -1238,16 +1255,16 @@ object Build {
     else path.toString
 
   private def jmhBuild(
-    inputs: Inputs,
-    build: Build.Successful,
-    logger: Logger,
-    javaCommand: String,
-    buildClient: BloopBuildClient,
-    compiler: ScalaCompiler,
-    buildTests: Boolean,
-    actionableDiagnostics: Option[Boolean]
+                        inputs: Module,
+                        build: Build.Successful,
+                        logger: Logger,
+                        javaCommand: String,
+                        buildClient: BloopBuildClient,
+                        compiler: ScalaCompiler,
+                        buildTests: Boolean,
+                        actionableDiagnostics: Option[Boolean]
   )(using ScalaCliInvokeData): Either[BuildException, Option[Build]] = either {
-    val jmhProjectName = inputs.projectName + "_jmh"
+    val jmhProjectName = inputs.projectName.name + "_jmh"
     val jmhOutputDir   = inputs.workspace / Constants.workspaceDirName / jmhProjectName
     os.remove.all(jmhOutputDir)
     val jmhSourceDir   = jmhOutputDir / "sources"

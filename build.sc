@@ -13,6 +13,7 @@ import $file.project.settings, settings.{
   ScalaCliSbtModule,
   ScalaCliScalafixModule,
   localRepoResourcePath,
+  moduleConfigFileName,
   platformExecutableJarExtension,
   workspaceDirName,
   projectFileName,
@@ -457,6 +458,7 @@ trait Core extends ScalaCliCrossSbtModule
          |  def workspaceDirName = "$workspaceDirName"
          |  def projectFileName = "$projectFileName"
          |  def jvmPropertiesFileName = "$jvmPropertiesFileName"
+         |  def moduleConfigFileName = "$moduleConfigFileName"
          |  def scalacArgumentsFileName = "scalac.args.txt"
          |  def maxScalacArgumentsCount = 5000
          |
@@ -677,7 +679,8 @@ trait Build extends ScalaCliCrossSbtModule
     Deps.scalaJsEnvNodeJs,
     Deps.scalaJsTestAdapter,
     Deps.swoval,
-    Deps.zipInputStream
+    Deps.zipInputStream,
+    Deps.tomlScala
   )
 
   def repositoriesTask =
@@ -713,6 +716,8 @@ trait Build extends ScalaCliCrossSbtModule
            |  def defaultScalaVersion = "${Scala.defaultUser}"
            |  def defaultScala212Version = "${Scala.scala212}"
            |  def defaultScala213Version = "${Scala.scala213}"
+           |
+           |  def moduleConfigFileName = "$moduleConfigFileName"
            |}
            |""".stripMargin
       if (!os.isFile(dest) || os.read(dest) != code)
@@ -1000,6 +1005,7 @@ trait CliIntegration extends SbtModule with ScalaCliPublishModule with HasTests
           )}"
            |  def cs                         = "${settings.cs().replace("\\", "\\\\")}"
            |  def workspaceDirName           = "$workspaceDirName"
+           |  def moduleConfigFileName       = "$moduleConfigFileName"
            |  def libsodiumVersion           = "${deps.libsodiumVersion}"
            |  def dockerArchLinuxImage       = "${TestDeps.archLinuxImage}"
            |  
