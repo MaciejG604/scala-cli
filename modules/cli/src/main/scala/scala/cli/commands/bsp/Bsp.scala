@@ -6,10 +6,9 @@ import com.github.plokhotnyuk.jsoniter_scala.macros.JsonCodecMaker
 
 import scala.build.EitherCps.{either, value}
 import scala.build.*
-import scala.build.input.compose
 import scala.build.bsp.{BspReloadableOptions, BspThreads}
 import scala.build.errors.BuildException
-import scala.build.input.ModuleInputs
+import scala.build.input.{ModuleInputs, compose}
 import scala.build.options.{BuildOptions, Scope}
 import scala.cli.CurrentParams
 import scala.cli.commands.ScalaCommand
@@ -61,7 +60,8 @@ object Bsp extends ScalaCommand[BspOptions] {
     val getLauncherOptions: () => LauncherOptions  = () => latestLauncherOptions(options)
     val getEnvsFromFile: () => Map[String, String] = () => latestEnvsFromFile(options)
 
-    val preprocessInputs: Seq[String] => Either[BuildException, (compose.Inputs, Seq[BuildOptions])] =
+    val preprocessInputs
+      : Seq[String] => Either[BuildException, (compose.Inputs, Seq[BuildOptions])] =
       argsSeq =>
         either {
           val sharedOptions   = getSharedOptions()
@@ -114,7 +114,7 @@ object Bsp extends ScalaCommand[BspOptions] {
     // TODO reported override option values
     // FIXME Only some options need to be unified for the whole project, like scala version, JVM
     val combinedBuildOptions = inputsAndBuildOptions._2.reduceLeft(_ orElse _)
-    val inputs            = inputsAndBuildOptions._1
+    val inputs               = inputsAndBuildOptions._1
 
     if (options.shared.logging.verbosity >= 3)
       pprint.err.log(combinedBuildOptions)
