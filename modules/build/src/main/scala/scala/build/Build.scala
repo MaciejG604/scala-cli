@@ -275,6 +275,11 @@ object Build {
 
       val baseOptions = overrideOptions.orElse(sharedOptions)
 
+      val inputs0 = updateInputs(
+        inputs,
+        overrideOptions.orElse(options) // update hash in inputs with options coming from the CLI or cross-building, not from the sources
+      )
+
       val scopedSources = value(crossSources.scopedSources(baseOptions))
 
       val mainSources =
@@ -284,12 +289,6 @@ object Build {
       val testSources =
         value(scopedSources.sources(Scope.Test, baseOptions, inputs.workspace, logger))
       val testOptions = testSources.buildOptions
-
-      val inputs0 = updateInputs(
-        inputs,
-        mainOptions, // update hash in inputs with options coming from the CLI or cross-building, not from the sources
-        Some(testOptions).filter(_ != mainOptions)
-      )
 
       def doBuildScope(
         options: BuildOptions,
