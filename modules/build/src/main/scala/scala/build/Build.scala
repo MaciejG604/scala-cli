@@ -229,7 +229,9 @@ object Build {
       logger,
       options.suppressWarningOptions,
       options.internal.exclude
-    )private def build(
+    )
+
+  private def build(
     inputs: Module,
     crossSources: CrossSources,options: BuildOptions,
     logger: Logger,
@@ -273,10 +275,12 @@ object Build {
 
       val baseOptions = overrideOptions.orElse(sharedOptions)
 
-      val inputs0 = updateInputs(
-        inputs,
-        overrideOptions.orElse(options) // update hash in inputs with options coming from the CLI or cross-building, not from the sources
-      )
+      val inputs0 = if (allInputs.mayAppendHash) {
+        updateInputs(
+          inputs,
+          overrideOptions.orElse(options) // update hash in inputs with options coming from the CLI or cross-building, not from the sources
+        )
+      } else allInputs
 
       val scopedSources = value(crossSources.scopedSources(baseOptions))
 
@@ -561,9 +565,11 @@ object Build {
     crossBuilds: Boolean,
     buildTests: Boolean,
     partial: Option[Boolean],
-    actionableDiagnostics: Option[Boolean]
+    actionableDiagnostics: Option[Boolean],
+    withProjectName: Boolean = false,
   )(using ScalaCliInvokeData): Either[BuildException, Builds] = either {
     val buildClient = BloopBuildClient.create(
+      Option.when(withProjectName)(inputs.projectName),
       logger,
       keepDiagnostics = options.internal.keepDiagnostics
     )
@@ -646,6 +652,7 @@ object Build {
   )(action: Either[BuildException, Builds] => Unit)(using ScalaCliInvokeData): Watcher = {
 
     val buildClient = BloopBuildClient.create(
+      None,
       logger,
       keepDiagnostics = options.internal.keepDiagnostics
     )
