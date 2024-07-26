@@ -12,6 +12,7 @@ import java.util.concurrent.{ScheduledExecutorService, ScheduledFuture}
 import scala.annotation.tailrec
 import scala.build.EitherCps.{either, value}
 import scala.build.Ops.*
+import scala.build.bsp.buildtargets.ProjectName
 import scala.build.compiler.{ScalaCompiler, ScalaCompilerMaker}
 import scala.build.errors.*
 import scala.build.input.VirtualScript.VirtualScriptNameRegex
@@ -29,7 +30,7 @@ import scala.util.control.NonFatal
 import scala.util.{Properties, Try}
 
 trait Build {
-  def inputs: Inputs
+  def inputs: Module
   def options: BuildOptions
   def scope: Scope
   def outputOpt: Option[os.Path]
@@ -42,7 +43,7 @@ trait Build {
 object Build {
 
   final case class Successful(
-    inputs: Inputs,
+    inputs: Module,
     options: BuildOptions,
     scalaParams: Option[ScalaParameters],
     scope: Scope,
@@ -165,7 +166,7 @@ object Build {
   }
 
   final case class Failed(
-    inputs: Inputs,
+    inputs: Module,
     options: BuildOptions,
     scope: Scope,
     sources: Sources,
@@ -179,7 +180,7 @@ object Build {
   }
 
   final case class Cancelled(
-    inputs: Inputs,
+    inputs: Module,
     options: BuildOptions,
     scope: Scope,
     reason: String
@@ -194,10 +195,10 @@ object Build {
     * Using only the command-line options not the ones from the sources.
     */
   def updateInputs(
-    inputs: Inputs,
+    inputs: Module,
     options: BuildOptions,
     testOptions: Option[BuildOptions] = None
-  ): Inputs = {
+  ): Module = {
 
     // If some options are manually overridden, append a hash of the options to the project name
     // Using options, not options0 - only the command-line options are taken into account. No hash is
@@ -214,11 +215,11 @@ object Build {
   }
 
   private def allInputs(
-    inputs: Inputs,
+    inputs: Module,
     options: BuildOptions,
     logger: Logger
   )(using ScalaCliInvokeData) =
-    CrossSources.forInputs(
+    CrossSources.forModuleInputs(
       inputs,
       Sources.defaultPreprocessors(
         options.archiveCache,
@@ -231,7 +232,7 @@ object Build {
     )
 
   private def build(
-    inputs: Inputs,
+    inputs: Module,
     crossSources: CrossSources,
     options: BuildOptions,
     logger: Logger,
@@ -246,7 +247,7 @@ object Build {
     val sharedOptions = crossSources.sharedOptions(options)
     val crossOptions  = sharedOptions.crossOptions
 
-    def doPostProcess(build: Build, inputs: Inputs, scope: Scope): Unit = build match {
+    def doPostProcess(build: Build, inputs: Module, scope: Scope): Unit = build match {
       case build: Build.Successful =>
         for (sv <- build.project.scalaCompiler.map(_.scalaVersion))
           postProcess(
@@ -275,6 +276,13 @@ object Build {
 
       val baseOptions = overrideOptions.orElse(sharedOptions)
 
+      val inputs0 = if (inputs.mayAppendHash)
+        updateInputs(
+          inputs,
+          overrideOptions.orElse(options) // update hash in inputs with options coming from the CLI or cross-building, not from the sources
+        )
+      else inputs
+
       val scopedSources = value(crossSources.scopedSources(baseOptions))
 
       val mainSources =
@@ -284,12 +292,6 @@ object Build {
       val testSources =
         value(scopedSources.sources(Scope.Test, baseOptions, inputs.workspace, logger))
       val testOptions = testSources.buildOptions
-
-      val inputs0 = updateInputs(
-        inputs,
-        mainOptions, // update hash in inputs with options coming from the CLI or cross-building, not from the sources
-        Some(testOptions).filter(_ != mainOptions)
-      )
 
       def doBuildScope(
         options: BuildOptions,
@@ -425,7 +427,7 @@ object Build {
   }
 
   private def build(
-    inputs: Inputs,
+    inputs: Module,
     sources: Sources,
     generatedSources: Seq[GeneratedSource],
     options: BuildOptions,
@@ -477,23 +479,28 @@ object Build {
     }
   }
 
-  def projectRootDir(root: os.Path, projectName: String): os.Path =
-    root / Constants.workspaceDirName / projectName
-  def classesRootDir(root: os.Path, projectName: String): os.Path =
+  def projectRootDir(root: os.Path, projectName: ProjectName): os.Path =
+    root / Constants.workspaceDirName / projectName.name
+  def classesRootDir(root: os.Path, projectName: ProjectName): os.Path =
     projectRootDir(root, projectName) / "classes"
-  def classesDir(root: os.Path, projectName: String, scope: Scope, suffix: String = ""): os.Path =
+  def classesDir(
+    root: os.Path,
+    projectName: ProjectName,
+    scope: Scope,
+    suffix: String = ""
+  ): os.Path =
     classesRootDir(root, projectName) / s"${scope.name}$suffix"
 
   def resourcesRegistry(
     root: os.Path,
-    projectName: String,
+    projectName: ProjectName,
     scope: Scope
   ): os.Path =
-    root / Constants.workspaceDirName / projectName / s"resources-${scope.name}"
+    root / Constants.workspaceDirName / projectName.name / s"resources-${scope.name}"
 
   def scalaNativeSupported(
     options: BuildOptions,
-    inputs: Inputs,
+    inputs: Module,
     logger: Logger
   ): Either[BuildException, Option[ScalaNativeCompatibilityError]] =
     either {
@@ -551,7 +558,7 @@ object Build {
     }
 
   def build(
-    inputs: Inputs,
+    inputs: Module,
     options: BuildOptions,
     compilerMaker: ScalaCompilerMaker,
     docCompilerMakerOpt: Option[ScalaCompilerMaker],
@@ -559,9 +566,11 @@ object Build {
     crossBuilds: Boolean,
     buildTests: Boolean,
     partial: Option[Boolean],
-    actionableDiagnostics: Option[Boolean]
+    actionableDiagnostics: Option[Boolean],
+    withProjectName: Boolean = false
   )(using ScalaCliInvokeData): Either[BuildException, Builds] = either {
     val buildClient = BloopBuildClient.create(
+      Option.when(withProjectName)(inputs.projectName),
       logger,
       keepDiagnostics = options.internal.keepDiagnostics
     )
@@ -631,7 +640,7 @@ object Build {
   }
 
   def watch(
-    inputs: Inputs,
+    inputs: Module,
     options: BuildOptions,
     compilerMaker: ScalaCompilerMaker,
     docCompilerMakerOpt: Option[ScalaCompilerMaker],
@@ -644,6 +653,7 @@ object Build {
   )(action: Either[BuildException, Builds] => Unit)(using ScalaCliInvokeData): Watcher = {
 
     val buildClient = BloopBuildClient.create(
+      None,
       logger,
       keepDiagnostics = options.internal.keepDiagnostics
     )
@@ -835,7 +845,7 @@ object Build {
     *   a bloop [[Project]]
     */
   def buildProject(
-    inputs: Inputs,
+    inputs: Module,
     sources: Sources,
     generatedSources: Seq[GeneratedSource],
     options: BuildOptions,
@@ -979,10 +989,21 @@ object Build {
         List(classesDir(inputs.workspace, inputs.projectName, Scope.Main))
       else Nil
 
+    // `test` scope should contains class path to main scope
+    val modulesClassesPath = inputs.moduleDependencies.map { depProjectName =>
+      classesDir(inputs.workspace, depProjectName, Scope.Main)
+    } ++ {
+      if (scope == Scope.Test) inputs.moduleDependencies.map { depProjectName =>
+        classesDir(inputs.workspace, depProjectName, Scope.Test)
+      }
+      else Nil
+    }
+
     value(validate(logger, options))
 
     val fullClassPath = artifacts.compileClassPath ++
       mainClassesPath ++
+      modulesClassesPath ++
       artifacts.javacPluginDependencies.map(_._3) ++
       artifacts.extraJavacPlugins
 
@@ -1009,13 +1030,14 @@ object Build {
       resourceDirs = sources.resourceDirs,
       scope = scope,
       javaHomeOpt = Option(options.javaHomeLocation().value),
-      javacOptions = javacOptions
+      javacOptions = javacOptions,
+      moduleDependencies = inputs.moduleDependencies
     )
     project
   }
 
   def prepareBuild(
-    inputs: Inputs,
+    inputs: Module,
     sources: Sources,
     generatedSources: Seq[GeneratedSource],
     options: BuildOptions,
@@ -1096,7 +1118,7 @@ object Build {
     }
 
   def buildOnce(
-    inputs: Inputs,
+    inputs: Module,
     sources: Sources,
     generatedSources: Seq[GeneratedSource],
     options: BuildOptions,
@@ -1128,7 +1150,7 @@ object Build {
     }
 
     buildClient.clear()
-    buildClient.setGeneratedSources(scope, generatedSources)
+    buildClient.setGeneratedSources(inputs.scopeProjectName(scope), generatedSources)
 
     val partial = partialOpt.getOrElse {
       options.notForBloopOptions.packageOptions.packageTypeOpt.exists(_.sourceBased)
@@ -1266,7 +1288,7 @@ object Build {
     else path.toString
 
   private def jmhBuild(
-    inputs: Inputs,
+    inputs: Module,
     build: Build.Successful,
     logger: Logger,
     javaCommand: String,
@@ -1275,7 +1297,7 @@ object Build {
     buildTests: Boolean,
     actionableDiagnostics: Option[Boolean]
   )(using ScalaCliInvokeData): Either[BuildException, Option[Build]] = either {
-    val jmhProjectName = inputs.projectName + "_jmh"
+    val jmhProjectName = inputs.projectName.name + "_jmh"
     val jmhOutputDir   = inputs.workspace / Constants.workspaceDirName / jmhProjectName
     os.remove.all(jmhOutputDir)
     val jmhSourceDir   = jmhOutputDir / "sources"
