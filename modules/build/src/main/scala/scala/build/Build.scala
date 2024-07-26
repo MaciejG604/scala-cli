@@ -276,12 +276,12 @@ object Build {
 
       val baseOptions = overrideOptions.orElse(sharedOptions)
 
-      val inputs0 = if (inputs.mayAppendHash) {
+      val inputs0 = if (inputs.mayAppendHash)
         updateInputs(
           inputs,
           overrideOptions.orElse(options) // update hash in inputs with options coming from the CLI or cross-building, not from the sources
         )
-      } else inputs
+      else inputs
 
       val scopedSources = value(crossSources.scopedSources(baseOptions))
 
@@ -567,7 +567,7 @@ object Build {
     buildTests: Boolean,
     partial: Option[Boolean],
     actionableDiagnostics: Option[Boolean],
-    withProjectName: Boolean = false,
+    withProjectName: Boolean = false
   )(using ScalaCliInvokeData): Either[BuildException, Builds] = either {
     val buildClient = BloopBuildClient.create(
       Option.when(withProjectName)(inputs.projectName),
