@@ -46,7 +46,7 @@ are assumed to be Scala compiler options and will be propagated to Scala Compile
 
 Available in commands:
 
-[`run`](./commands.md#run), [`shebang`](./commands.md#shebang)
+[`bsp`](./commands.md#bsp), [`compile`](./commands.md#compile), [`dependency-update`](./commands.md#dependency-update), [`doc`](./commands.md#doc), [`export`](./commands.md#export), [`fix`](./commands.md#fix), [`fmt` , `format` , `scalafmt`](./commands.md#fmt), [`package`](./commands.md#package), [`publish`](./commands.md#publish), [`publish local`](./commands.md#publish-local), [`repl` , `console`](./commands.md#repl), [`run`](./commands.md#run), [`setup-ide`](./commands.md#setup-ide), [`shebang`](./commands.md#shebang), [`test`](./commands.md#test)
 
 <!-- Automatically generated, DO NOT EDIT MANUALLY -->
 
@@ -129,7 +129,7 @@ Bloop global options file
 ### `--bloop-jvm`
 
 [Internal]
-JVM to use to start Bloop (e.g. 'system|11', 'temurin:17', …)
+JVM to use to start Bloop (e.g. 'system|17', 'temurin:21', …)
 
 ### `--bloop-working-dir`
 
@@ -358,6 +358,12 @@ Available in commands:
 
 Sets the export format to SBT
 
+### `--maven`
+
+Aliases: `--mvn`
+
+Sets the export format to Maven
+
 ### `--mill`
 
 Sets the export format to Mill
@@ -379,6 +385,30 @@ Project name to be used on Mill build file
 ### `--sbt-version`
 
 Version of SBT to be used for the export
+
+### `--mvn-version`
+
+Version of Maven Compiler Plugin to be used for the export
+
+### `--mvn-scala-version`
+
+Version of Maven Scala Plugin to be used for the export
+
+### `--mvn-exec-plugin-version`
+
+Version of Maven Exec Plugin to be used for the export
+
+### `--mvn-app-artifact-id`
+
+ArtifactId to be used for the maven export
+
+### `--mvn-app-group-id`
+
+GroupId to be used for the maven export
+
+### `--mvn-app-version`
+
+Version to be used for the maven export
 
 ### `--output`
 
@@ -447,7 +477,7 @@ Pass a global dialect for scalafmt. This overrides whatever value is configured 
 
 Aliases: `--fmt-version`
 
-Pass scalafmt version before running it (3.8.2 by default). If passed, this overrides whatever value is configured in the .scalafmt.conf file.
+Pass scalafmt version before running it (3.8.3 by default). If passed, this overrides whatever value is configured in the .scalafmt.conf file.
 
 ## Global suppress warning options
 
@@ -494,6 +524,12 @@ Available in commands:
 [`bsp`](./commands.md#bsp), [`compile`](./commands.md#compile), [`dependency-update`](./commands.md#dependency-update), [`doc`](./commands.md#doc), [`export`](./commands.md#export), [`fix`](./commands.md#fix), [`fmt` , `format` , `scalafmt`](./commands.md#fmt), [`package`](./commands.md#package), [`publish`](./commands.md#publish), [`publish local`](./commands.md#publish-local), [`repl` , `console`](./commands.md#repl), [`run`](./commands.md#run), [`setup-ide`](./commands.md#setup-ide), [`shebang`](./commands.md#shebang), [`test`](./commands.md#test)
 
 <!-- Automatically generated, DO NOT EDIT MANUALLY -->
+
+### `--help-envs`
+
+Aliases: `--env-help`, `--envs-help`, `--help-env`
+
+Show environment variable help
 
 ### `--help-js`
 
@@ -1178,7 +1214,7 @@ Use Ammonite (instead of the default Scala REPL)
 
 Aliases: `--ammonite-ver`
 
-Set the Ammonite version (3.0.0-M2-13-23a8ef64 by default)
+Set the Ammonite version (3.0.0-M2-15-9bed9700 by default)
 
 ### `--ammonite-arg`
 
@@ -1348,7 +1384,7 @@ Enable Scala Native. To show more options for Scala Native pass `--help-native`
 
 ### `--native-version`
 
-Set the Scala Native version (0.5.4 by default).
+Set the Scala Native version (0.5.5 by default).
 
 ### `--native-mode`
 
@@ -1497,7 +1533,7 @@ Available in commands:
 
 Aliases: `-S`, `--scala`
 
-Set the Scala version (3.4.2 by default)
+Set the Scala version (3.5.0 by default)
 
 ### `--scala-binary-version`
 
@@ -1571,7 +1607,7 @@ Copy compilation results to output directory using either relative or absolute p
 
 Aliases: `--toolkit`
 
-Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.4.0, 'default' version for typelevel toolkit: 0.1.23
+Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.5.0, 'default' version for typelevel toolkit: 0.1.27
 
 ### `--exclude`
 

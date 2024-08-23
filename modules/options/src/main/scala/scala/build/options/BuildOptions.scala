@@ -21,6 +21,7 @@ import scala.build.internal.Constants.*
 import scala.build.internal.CsLoggerUtil.*
 import scala.build.internal.Regexes.scala3NightlyNicknameRegex
 import scala.build.internal.{Constants, OsLibc, StableScalaVersion, Util}
+import scala.build.internals.EnvVar
 import scala.build.options.BuildRequirements.ScopeRequirement
 import scala.build.options.validation.BuildOptionsRule
 import scala.build.{Artifacts, Logger, Os, Position, Positioned}
@@ -129,12 +130,11 @@ final case class BuildOptions(
       }
     else Nil
   }
-  private def dependencies: Either[BuildException, Seq[Positioned[AnyDependency]]] = either {
+  private def defaultDependencies: Either[BuildException, Seq[Positioned[AnyDependency]]] = either {
     value(maybeJsDependencies).map(Positioned.none(_)) ++
       value(maybeNativeDependencies).map(Positioned.none(_)) ++
       value(scalaLibraryDependencies).map(Positioned.none(_)) ++
-      value(scalaCompilerDependencies).map(Positioned.none(_)) ++
-      classPathOptions.extraDependencies.toSeq
+      value(scalaCompilerDependencies).map(Positioned.none(_))
   }
 
   private def semanticDbPlugins(logger: Logger): Either[BuildException, Seq[AnyDependency]] =
@@ -285,7 +285,7 @@ final case class BuildOptions(
 
   lazy val scalaParams: Either[BuildException, Option[ScalaParameters]] = either {
     val params =
-      if (System.getenv("CI") == null)
+      if EnvVar.Internal.ci.valueOpt.isEmpty then
         computeScalaParams(Constants.version, finalCache, value(finalRepositories)).orElse(
           // when the passed scala version is missed in the cache, we always force a cache refresh
           // https://github.com/VirtusLab/scala-cli/issues/1090
@@ -450,7 +450,8 @@ final case class BuildOptions(
       scalaArtifactsParamsOpt,
       javacPluginDependencies = value(javacPluginDependencies),
       extraJavacPlugins = javaOptions.javacPlugins.map(_.value),
-      dependencies = value(dependencies),
+      defaultDependencies = value(defaultDependencies),
+      extraDependencies = classPathOptions.extraDependencies.toSeq,
       compileOnlyDependencies = classPathOptions.extraCompileOnlyDependencies.toSeq,
       extraClassPath = allExtraJars,
       extraCompileOnlyJars = allExtraCompileOnlyJars,
@@ -595,8 +596,8 @@ object BuildOptions {
           currentEnv.keys.find(_.equalsIgnoreCase(name)).getOrElse(name)
         else
           name
-      val javaHomeKey = keyFor("JAVA_HOME")
-      val pathKey     = keyFor("PATH")
+      val javaHomeKey = keyFor(EnvVar.Java.javaHome.name)
+      val pathKey     = keyFor(EnvVar.Misc.path.name)
       val updatedPath = {
         val valueOpt = currentEnv.get(pathKey)
         val entry    = (javaHome / "bin").toString

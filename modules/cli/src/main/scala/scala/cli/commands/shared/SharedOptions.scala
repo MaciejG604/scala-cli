@@ -19,22 +19,23 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 import scala.build.EitherCps.{either, value}
 import scala.build.Ops.EitherOptOps
-import scala.build.*
+import scala.build.bsp.buildtargets.ProjectName
 import scala.build.compiler.{BloopCompilerMaker, ScalaCompilerMaker, SimpleScalaCompilerMaker}
+import scala.build.compose.{Inputs, InputsComposer}
 import scala.build.directives.DirectiveDescription
 import scala.build.errors.{AmbiguousPlatformError, BuildException, ConfigDbException, Severity}
-import scala.build.input.{Element, Inputs, ResourceDirectory, ScalaCliInvokeData}
+import scala.build.input.{Element, Module, ResourceDirectory, ScalaCliInvokeData}
 import scala.build.interactive.Interactive
 import scala.build.interactive.Interactive.{InteractiveAsk, InteractiveNop}
-import scala.build.internal.util.ConsoleUtils.ScalaCliConsole
 import scala.build.internal.util.WarningMessages
 import scala.build.internal.{Constants, FetchExternalBinary, OsLibc, Util}
+import scala.build.internals.ConsoleUtils.ScalaCliConsole
 import scala.build.options.ScalaVersionUtil.fileWithTtl0
 import scala.build.options.{BuildOptions, ComputeVersion, Platform, ScalacOpt, ShadowingSeq}
 import scala.build.preprocessing.directives.ClasspathUtils.*
 import scala.build.preprocessing.directives.Toolkit.maxScalaNativeWarningMsg
 import scala.build.preprocessing.directives.{Python, Toolkit}
-import scala.build.options as bo
+import scala.build.{compose, options as bo, *}
 import scala.cli.ScalaCli
 import scala.cli.commands.publish.ConfigUtil.*
 import scala.cli.commands.shared.{
@@ -87,6 +88,8 @@ final case class SharedOptions(
     workspace: SharedWorkspaceOptions = SharedWorkspaceOptions(),
   @Recurse
     sharedPython: SharedPythonOptions = SharedPythonOptions(),
+  @Recurse
+    benchmarking: BenchmarkingOptions = BenchmarkingOptions(),
 
   @Group(HelpGroup.Scala.toString)
   @HelpMessage(s"Set the Scala version (${Constants.defaultScalaVersion} by default)")
@@ -231,11 +234,11 @@ final case class SharedOptions(
   override def global: GlobalOptions =
     GlobalOptions(logging = logging, globalSuppress = suppress.global, powerOptions = powerOptions)
 
-  private def scalaJsOptions(opts: ScalaJsOptions): options.ScalaJsOptions = {
-    import opts._
-    options.ScalaJsOptions(
+  private def scalaJsOptions(opts: ScalaJsOptions): bo.ScalaJsOptions = {
+    import opts.*
+    bo.ScalaJsOptions(
       version = jsVersion,
-      mode = options.ScalaJsMode(jsMode),
+      mode = bo.ScalaJsMode(jsMode),
       moduleKindStr = jsModuleKind,
       checkIr = jsCheckIr,
       emitSourceMaps = jsEmitSourceMaps,
@@ -253,9 +256,9 @@ final case class SharedOptions(
     )
   }
 
-  private def linkerOptions(opts: ScalaJsOptions): options.scalajs.ScalaJsLinkerOptions = {
-    import opts._
-    options.scalajs.ScalaJsLinkerOptions(
+  private def linkerOptions(opts: ScalaJsOptions): bo.scalajs.ScalaJsLinkerOptions = {
+    import opts.*
+    bo.scalajs.ScalaJsLinkerOptions(
       linkerPath = jsLinkerPath
         .filter(_.trim.nonEmpty)
         .map(os.Path(_, Os.pwd)),
@@ -272,9 +275,9 @@ final case class SharedOptions(
   private def scalaNativeOptions(
     opts: ScalaNativeOptions,
     maxDefaultScalaNativeVersions: List[(String, String)]
-  ): options.ScalaNativeOptions = {
-    import opts._
-    options.ScalaNativeOptions(
+  ): bo.ScalaNativeOptions = {
+    import opts.*
+    bo.ScalaNativeOptions(
       version = nativeVersion,
       modeStr = nativeMode,
       ltoStr = nativeLto,
@@ -422,22 +425,13 @@ final case class SharedOptions(
           (ScalaCli.launcherOptions.scalaRunner.cliPredefinedRepository ++ dependencies.repository)
             .map(_.trim)
             .filter(_.nonEmpty),
-        extraDependencies = ShadowingSeq.from(
-          SharedOptions.parseDependencies(
-            dependencies.dependency.map(Positioned.none),
-            ignoreErrors
-          ) ++ resolvedToolkitDependency
-        ),
-        extraCompileOnlyDependencies = ShadowingSeq.from(
-          SharedOptions.parseDependencies(
-            dependencies.compileOnlyDependency.map(Positioned.none),
-            ignoreErrors
-          ) ++ resolvedToolkitDependency
-        )
+        extraDependencies = extraDependencies(ignoreErrors, resolvedToolkitDependency),
+        extraCompileOnlyDependencies =
+          extraCompileOnlyDependencies(ignoreErrors, resolvedToolkitDependency)
       ),
       internal = bo.InternalOptions(
         cache = Some(coursierCache),
-        localRepository = LocalRepo.localRepo(Directories.directories.localRepoDir),
+        localRepository = LocalRepo.localRepo(Directories.directories.localRepoDir, logger),
         verbosity = Some(logging.verbosity),
         strictBloopJsonCheck = strictBloopJsonCheck,
         interactive = Some(() => interactive),
@@ -454,6 +448,35 @@ final case class SharedOptions(
       useBuildServer = compilationServer.server
     )
   }
+
+  private def resolvedDependencies(
+    deps: List[String],
+    ignoreErrors: Boolean,
+    extraResolvedDependencies: Seq[Positioned[AnyDependency]]
+  ) = ShadowingSeq.from {
+    SharedOptions.parseDependencies(deps.map(Positioned.none), ignoreErrors) ++
+      extraResolvedDependencies
+  }
+
+  private def extraCompileOnlyDependencies(
+    ignoreErrors: Boolean,
+    resolvedDeps: Seq[Positioned[AnyDependency]]
+  ) = {
+    val jmhCorePrefix = s"${Constants.jmhOrg}:${Constants.jmhCoreModule}"
+    val jmhDeps =
+      if benchmarking.jmh.getOrElse(false) &&
+        !dependencies.compileOnlyDependency.exists(_.startsWith(jmhCorePrefix)) &&
+        !dependencies.dependency.exists(_.startsWith(jmhCorePrefix))
+      then List(s"$jmhCorePrefix:${Constants.jmhVersion}")
+      else List.empty
+    val finalDeps = dependencies.compileOnlyDependency ++ jmhDeps
+    resolvedDependencies(finalDeps, ignoreErrors, resolvedDeps)
+  }
+
+  private def extraDependencies(
+    ignoreErrors: Boolean,
+    resolvedDeps: Seq[Positioned[AnyDependency]]
+  ) = resolvedDependencies(dependencies.dependency, ignoreErrors, resolvedDeps)
 
   extension (rawClassPath: List[String]) {
     def extractedClassPath: List[os.Path] =
@@ -478,7 +501,8 @@ final case class SharedOptions(
     ))
       .extractedClassPath
 
-  def extraClasspathWasPassed: Boolean = extraJarsAndClassPath.exists(!_.hasSourceJarSuffix)
+  def extraClasspathWasPassed: Boolean =
+    extraJarsAndClassPath.exists(!_.hasSourceJarSuffix) || dependencies.dependency.nonEmpty
 
   def extraCompileOnlyClassPath: List[os.Path] = extraCompileOnlyJars.extractedClassPath
 
@@ -567,7 +591,7 @@ final case class SharedOptions(
       .orElse {
         for (javaHome <- options.javaHomeLocationOpt()) yield {
           val (javaHomeVersion, javaHomeCmd) = OsLibc.javaHomeVersion(javaHome.value)
-          if (javaHomeVersion >= 17)
+          if (javaHomeVersion >= Constants.minimumBloopJavaVersion)
             BuildOptions.JavaHomeInfo(javaHome.value, javaHomeCmd, javaHomeVersion)
           else defaultJvmHome
         }
@@ -600,37 +624,67 @@ final case class SharedOptions(
 
   lazy val coursierCache = coursier.coursierCache(logging.logger.coursierLogger(""))
 
+  private def moduleInputsFromArgs(
+    args: Seq[String],
+    forcedProjectName: Option[ProjectName],
+    defaultInputs: () => Option[Module] = () => Module.default()
+  )(using ScalaCliInvokeData) = SharedOptions.inputs(
+    args,
+    defaultInputs,
+    resourceDirs,
+    Directories.directories,
+    logger = logger,
+    coursierCache,
+    workspace.forcedWorkspaceOpt,
+    input.defaultForbiddenDirectories,
+    input.forbid,
+    scriptSnippetList = allScriptSnippets,
+    scalaSnippetList = allScalaSnippets,
+    javaSnippetList = allJavaSnippets,
+    markdownSnippetList = allMarkdownSnippets,
+    enableMarkdown = markdown.enableMarkdown,
+    extraClasspathWasPassed = extraClasspathWasPassed,
+    forcedProjectName = forcedProjectName
+  )
+
+  def composeInputs(
+    args: Seq[String],
+    defaultInputs: () => Option[Module] = () => Module.default()
+  )(using ScalaCliInvokeData): Either[BuildException, Inputs] = {
+    val updatedModuleInputsFromArgs
+      : (Seq[String], Option[ProjectName]) => Either[BuildException, Module] =
+      (args, projectNameOpt) =>
+        for {
+          moduleInputs <- moduleInputsFromArgs(args, projectNameOpt, defaultInputs)
+          options      <- buildOptions()
+        } yield Build.updateInputs(moduleInputs, options)
+
+    InputsComposer(
+      args,
+      Os.pwd,
+      updatedModuleInputsFromArgs,
+      ScalaCli.allowRestrictedFeatures
+    ).getInputs
+  }
+
   def inputs(
     args: Seq[String],
-    defaultInputs: () => Option[Inputs] = () => Inputs.default()
-  )(using ScalaCliInvokeData): Either[BuildException, Inputs] =
-    SharedOptions.inputs(
-      args,
-      defaultInputs,
-      resourceDirs,
-      Directories.directories,
-      logger = logger,
-      coursierCache,
-      workspace.forcedWorkspaceOpt,
-      input.defaultForbiddenDirectories,
-      input.forbid,
-      scriptSnippetList = allScriptSnippets,
-      scalaSnippetList = allScalaSnippets,
-      javaSnippetList = allJavaSnippets,
-      markdownSnippetList = allMarkdownSnippets,
-      enableMarkdown = markdown.enableMarkdown,
-      extraClasspathWasPassed = extraClasspathWasPassed
-    )
+    defaultInputs: () => Option[Module] = () => Module.default()
+  )(using ScalaCliInvokeData) = moduleInputsFromArgs(args, forcedProjectName = None, defaultInputs)
 
   def allScriptSnippets: List[String]   = snippet.scriptSnippet ++ snippet.executeScript
   def allScalaSnippets: List[String]    = snippet.scalaSnippet ++ snippet.executeScala
   def allJavaSnippets: List[String]     = snippet.javaSnippet ++ snippet.executeJava
   def allMarkdownSnippets: List[String] = snippet.markdownSnippet ++ snippet.executeMarkdown
 
+  def hasSnippets =
+    allScriptSnippets.nonEmpty || allScalaSnippets.nonEmpty || allJavaSnippets
+      .nonEmpty || allMarkdownSnippets.nonEmpty
+
   def validateInputArgs(
     args: Seq[String]
   )(using ScalaCliInvokeData): Seq[Either[String, Seq[Element]]] =
-    Inputs.validateArgs(
+    Module.validateArgs(
       args,
       Os.pwd,
       SharedOptions.downloadInputs(coursierCache),
@@ -659,10 +713,10 @@ object SharedOptions {
         .map(f => os.read.bytes(os.Path(f, Os.pwd)))
   }
 
-  /** [[Inputs]] builder, handy when you don't have a [[SharedOptions]] instance at hand */
+  /** [[Module]] builder, handy when you don't have a [[SharedOptions]] instance at hand */
   def inputs(
     args: Seq[String],
-    defaultInputs: () => Option[Inputs],
+    defaultInputs: () => Option[Module],
     resourceDirs: Seq[String],
     directories: scala.build.Directories,
     logger: scala.build.Logger,
@@ -675,8 +729,9 @@ object SharedOptions {
     javaSnippetList: List[String],
     markdownSnippetList: List[String],
     enableMarkdown: Boolean = false,
-    extraClasspathWasPassed: Boolean = false
-  )(using ScalaCliInvokeData): Either[BuildException, Inputs] = {
+    extraClasspathWasPassed: Boolean = false,
+    forcedProjectName: Option[ProjectName] = None
+  )(using ScalaCliInvokeData): Either[BuildException, Module] = {
     val resourceInputs = resourceDirs
       .map(os.Path(_, Os.pwd))
       .map { path =>
@@ -686,7 +741,7 @@ object SharedOptions {
       }
       .map(ResourceDirectory.apply)
 
-    val maybeInputs = Inputs(
+    val maybeInputs = Module(
       args,
       Os.pwd,
       defaultInputs = defaultInputs,
@@ -700,7 +755,8 @@ object SharedOptions {
       forcedWorkspace = forcedWorkspaceOpt,
       enableMarkdown = enableMarkdown,
       allowRestrictedFeatures = ScalaCli.allowRestrictedFeatures,
-      extraClasspathWasPassed = extraClasspathWasPassed
+      extraClasspathWasPassed = extraClasspathWasPassed,
+      forcedProjectName = forcedProjectName
     )
 
     maybeInputs.map { inputs =>

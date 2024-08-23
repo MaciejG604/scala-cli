@@ -8,7 +8,8 @@ import scala.build.EitherCps.{either, value}
 import scala.build.*
 import scala.build.bsp.{BspReloadableOptions, BspThreads}
 import scala.build.errors.BuildException
-import scala.build.input.Inputs
+import scala.build.input.Module
+import scala.build.internals.EnvVar
 import scala.build.options.{BuildOptions, Scope}
 import scala.cli.commands.ScalaCommand
 import scala.cli.commands.publish.ConfigUtil.*
@@ -63,7 +64,7 @@ object Bsp extends ScalaCommand[BspOptions] {
       .flatMap(_.get(Keys.power).toOption)
       .flatten
       .getOrElse(false)
-    val envPowerMode       = latestEnvs.get("SCALA_CLI_POWER").exists(_.toBoolean)
+    val envPowerMode       = latestEnvs.get(EnvVar.ScalaCli.power.name).exists(_.toBoolean)
     val launcherPowerArg   = latestLauncherOptions.powerOptions.power
     val subCommandPowerArg = latestSharedOptions.powerOptions.power
     val latestPowerMode = configPowerMode || launcherPowerArg || subCommandPowerArg || envPowerMode
@@ -82,66 +83,84 @@ object Bsp extends ScalaCommand[BspOptions] {
 
     refreshPowerMode(getLauncherOptions(), getSharedOptions(), getEnvsFromFile())
 
-    val preprocessInputs: Seq[String] => Either[BuildException, (Inputs, BuildOptions)] =
+    val preprocessInputs
+      : Seq[String] => Either[BuildException, (compose.Inputs, Seq[BuildOptions])] =
       argsSeq =>
         either {
           val sharedOptions   = getSharedOptions()
           val launcherOptions = getLauncherOptions()
           val envs            = getEnvsFromFile()
-          val initialInputs   = value(sharedOptions.inputs(argsSeq, () => Inputs.default()))
 
           refreshPowerMode(launcherOptions, sharedOptions, envs)
-
-          if (sharedOptions.logging.verbosity >= 3)
-            pprint.err.log(initialInputs)
 
           val baseOptions      = buildOptions(sharedOptions, launcherOptions, envs)
           val latestLogger     = sharedOptions.logging.logger
           val persistentLogger = new PersistentDiagnosticLogger(latestLogger)
 
-          val crossResult = CrossSources.forInputs(
-            initialInputs,
-            Sources.defaultPreprocessors(
-              baseOptions.archiveCache,
-              baseOptions.internal.javaClassNameVersionOpt,
-              () => baseOptions.javaHome().value.javaCommand
-            ),
-            persistentLogger,
-            baseOptions.suppressWarningOptions,
-            baseOptions.internal.exclude
-          )
+          val initialInputs: compose.Inputs = value(sharedOptions.composeInputs(argsSeq))
 
-          val (allInputs, finalBuildOptions) = {
-            for
-              crossSourcesAndInputs <- crossResult
-              // compiler bug, can't do :
-              // (crossSources, crossInputs) <- crossResult
-              (crossSources, crossInputs) = crossSourcesAndInputs
-              sharedBuildOptions          = crossSources.sharedOptions(baseOptions)
-              scopedSources <- crossSources.scopedSources(sharedBuildOptions)
-              resolvedBuildOptions =
-                scopedSources.buildOptionsFor(Scope.Main).foldRight(sharedBuildOptions)(_ orElse _)
-            yield (crossInputs, resolvedBuildOptions)
-          }.getOrElse(initialInputs -> baseOptions)
+          if (sharedOptions.logging.verbosity >= 3)
+            pprint.err.log(initialInputs)
 
-          Build.updateInputs(allInputs, baseOptions) -> finalBuildOptions
+          initialInputs.preprocessInputs { moduleInputs =>
+            val crossResult = CrossSources.forModuleInputs(
+              moduleInputs,
+              Sources.defaultPreprocessors(
+                baseOptions.archiveCache,
+                baseOptions.internal.javaClassNameVersionOpt,
+                () => baseOptions.javaHome().value.javaCommand
+              ),
+              persistentLogger,
+              baseOptions.suppressWarningOptions,
+              baseOptions.internal.exclude
+            )
+
+            val (allInputs, finalBuildOptions) = {
+              for
+                crossSourcesAndInputs <- crossResult
+                // compiler bug, can't do :
+                // (crossSources, crossInputs) <- crossResult
+                (crossSources, crossInputs) = crossSourcesAndInputs
+                sharedBuildOptions          = crossSources.sharedOptions(baseOptions)
+                scopedSources <- crossSources.scopedSources(sharedBuildOptions)
+                resolvedBuildOptions =
+                  scopedSources.buildOptionsFor(Scope.Main).foldRight(sharedBuildOptions)(
+                    _ orElse _
+                  )
+              yield (crossInputs, resolvedBuildOptions)
+            }.getOrElse(moduleInputs -> baseOptions)
+
+            allInputs -> finalBuildOptions
+          }
         }
 
-    val (inputs, finalBuildOptions) = preprocessInputs(args.all).orExit(logger)
+    val inputsAndBuildOptions = preprocessInputs(args.all).orExit(logger)
 
-    /** values used for lauching the bsp, especially for launching a bloop server, they include
-      * options extracted from sources
+    val combinedBuildOptions = inputsAndBuildOptions._2.reduceLeft(_ orElse _)
+    val inputs               = inputsAndBuildOptions._1
+
+    if (options.shared.logging.verbosity >= 3)
+      pprint.err.log(combinedBuildOptions)
+
+    /** values used for launching the bsp, especially for launching the bloop server, they do not
+      * include options extracted from sources, except in bloopRifleConfig - it's needed for
+      * correctly launching the bloop server
       */
     val initialBspOptions = {
       val sharedOptions   = getSharedOptions()
       val launcherOptions = getLauncherOptions()
       val envs            = getEnvsFromFile()
       val bspBuildOptions = buildOptions(sharedOptions, launcherOptions, envs)
-        .orElse(finalBuildOptions)
+
+      // For correctly launching a bloop server we need all options, including ones from sources, e.g. for using a correct version of JVM
+      // FIXME pick highest JVM version for launching bloop out of all specified
+      val bloopRifleConfigOptions = bspBuildOptions.orElse(combinedBuildOptions)
+
       refreshPowerMode(launcherOptions, sharedOptions, envs)
+
       BspReloadableOptions(
         buildOptions = bspBuildOptions,
-        bloopRifleConfig = sharedOptions.bloopRifleConfig(Some(bspBuildOptions))
+        bloopRifleConfig = sharedOptions.bloopRifleConfig(Some(bloopRifleConfigOptions))
           .orExit(sharedOptions.logger),
         logger = sharedOptions.logging.logger,
         verbosity = sharedOptions.logging.verbosity
@@ -152,8 +171,7 @@ object Bsp extends ScalaCommand[BspOptions] {
       val sharedOptions   = getSharedOptions()
       val launcherOptions = getLauncherOptions()
       val envs            = getEnvsFromFile()
-      val bloopRifleConfig = sharedOptions.bloopRifleConfig(Some(finalBuildOptions))
-        .orExit(sharedOptions.logger)
+
       refreshPowerMode(launcherOptions, sharedOptions, envs)
 
       BspReloadableOptions(
@@ -165,8 +183,7 @@ object Bsp extends ScalaCommand[BspOptions] {
     }
 
     CurrentParams.workspaceOpt = Some(inputs.workspace)
-    val actionableDiagnostics =
-      options.shared.logging.verbosityOptions.actions
+    val actionableDiagnostics = options.shared.logging.verbosityOptions.actions
 
     BspThreads.withThreads { threads =>
       val bsp = scala.build.bsp.Bsp.create(
@@ -208,7 +225,7 @@ object Bsp extends ScalaCommand[BspOptions] {
           baseOptions.notForBloopOptions.addRunnerDependencyOpt.orElse(Some(false))
       )
     )
-    val withEnvs = envs.get("JAVA_HOME")
+    val withEnvs = envs.get(EnvVar.Java.javaHome.name)
       .filter(_ => withDefaults.javaOptions.javaHomeOpt.isEmpty)
       .map(javaHome =>
         withDefaults.copy(javaOptions =

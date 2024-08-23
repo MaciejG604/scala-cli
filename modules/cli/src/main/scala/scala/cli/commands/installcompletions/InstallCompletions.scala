@@ -1,7 +1,7 @@
 package scala.cli.commands.installcompletions
 
 import caseapp.*
-import caseapp.core.complete.{Bash, Zsh}
+import caseapp.core.complete.{Bash, Fish, Zsh}
 import caseapp.core.help.HelpFormat
 
 import java.io.File
@@ -9,6 +9,7 @@ import java.nio.charset.Charset
 import java.nio.file.Paths
 import java.util
 
+import scala.build.internals.EnvVar
 import scala.build.{Directories, Logger}
 import scala.cli.commands.shared.HelpGroup
 import scala.cli.commands.{ScalaCommand, SpecificationLevel}
@@ -46,6 +47,7 @@ object InstallCompletions extends ScalaCommand[InstallCompletionsOptions] {
         )
         System.err.println(s"$name install completions --shell zsh")
         System.err.println(s"$name install completions --shell bash")
+        System.err.println(s"$name install completions --shell fish")
         sys.exit(1)
       }
     }
@@ -57,7 +59,7 @@ object InstallCompletions extends ScalaCommand[InstallCompletionsOptions] {
         (script, defaultRcFile)
       case Zsh.id | "zsh" =>
         val completionScript = Zsh.script(name)
-        val zDotDir = Option(System.getenv("ZDOTDIR"))
+        val zDotDir = EnvVar.Misc.zDotDir.valueOpt
           .map(os.Path(_, os.pwd))
           .getOrElse(os.home)
         val defaultRcFile        = zDotDir / ".zshrc"
@@ -74,6 +76,10 @@ object InstallCompletions extends ScalaCommand[InstallCompletionsOptions] {
           s"""fpath=("$dir" $$fpath)""",
           "compinit"
         ).map(_ + System.lineSeparator()).mkString
+        (script, defaultRcFile)
+      case Fish.id | "fish" =>
+        val script        = Fish.script(name)
+        val defaultRcFile = os.home / ".config" / "fish" / "config.fish"
         (script, defaultRcFile)
       case _ =>
         System.err.println(s"Unrecognized or unsupported shell: $format")
@@ -114,9 +120,10 @@ object InstallCompletions extends ScalaCommand[InstallCompletionsOptions] {
   def getFormat(format: Option[String]): Option[String] =
     format.map(_.trim).filter(_.nonEmpty)
       .orElse {
-        Option(System.getenv("SHELL")).map(_.split("[\\/]+").last).map {
+        EnvVar.Misc.shell.valueOpt.map(_.split("[\\/]+").last).map {
           case "bash" => Bash.id
           case "zsh"  => Zsh.id
+          case "fish" => Fish.id
           case other  => other
         }
       }

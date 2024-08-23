@@ -11,6 +11,7 @@ import java.util.Locale
 
 import scala.build.Directories
 import scala.build.internal.Constants
+import scala.build.internals.EnvVar
 import scala.cli.config.{ConfigDb, Keys}
 import scala.cli.internal.Argv0
 import scala.cli.javaLauncher.JavaLauncherCli
@@ -45,7 +46,7 @@ object ScalaCli {
       powerEntry <- configDb.get(Keys.power).toOption
       power      <- powerEntry
     } yield power
-    val isPowerEnv = Option(System.getenv("SCALA_CLI_POWER")).flatMap(_.toBooleanOption)
+    val isPowerEnv = EnvVar.ScalaCli.power.valueOpt.flatMap(_.toBooleanOption)
     val isPower    = isPowerEnv.orElse(isPowerConfigDb).getOrElse(false)
     !isPower
   }
@@ -94,8 +95,8 @@ object ScalaCli {
     baos.toByteArray
   }
 
-  private def isCI = System.getenv("CI") != null
-  private def printStackTraces = Option(System.getenv("SCALA_CLI_PRINT_STACK_TRACES"))
+  private def isCI = EnvVar.Internal.ci.valueOpt.nonEmpty
+  private def printStackTraces = EnvVar.ScalaCli.printStackTraces.valueOpt
     .map(_.toLowerCase(Locale.ROOT))
     .exists {
       case "true" | "1" => true
@@ -137,14 +138,15 @@ object ScalaCli {
         }
 
         e match {
-          case _: UnsupportedClassVersionError if javaMajorVersion < 17 =>
-            warnRequiresJava17()
+          case _: UnsupportedClassVersionError
+              if javaMajorVersion < Constants.minimumBloopJavaVersion =>
+            warnRequiresMinimumBloopJava()
           case _: NoClassDefFoundError
               if isJava17ClassName(e.getMessage) &&
               CurrentParams.verbosity <= 1 &&
-              javaMajorVersion < 16 =>
+              javaMajorVersion < Constants.minimumInternalJavaVersion =>
             // Actually Java >= 16 here, but let's recommend a LTS version…
-            warnRequiresJava17()
+            warnRequiresMinimumBloopJava()
           case _: FailedToStartServerException =>
             System.err.println(
               s"""Running
@@ -157,7 +159,7 @@ object ScalaCli {
             // for https://github.com/VirtusLab/scala-cli/issues/828
             System.err.println(
               s"""Running
-                 |  export SCALA_CLI_VENDORED_ZIS=true
+                 |  export ${EnvVar.ScalaCli.vendoredZipInputStream.name}=true
                  |before running $fullRunnerName might fix the issue.
                  |""".stripMargin
             )
@@ -168,9 +170,9 @@ object ScalaCli {
         else sys.exit(1)
     }
 
-  private def warnRequiresJava17(): Unit =
+  private def warnRequiresMinimumBloopJava(): Unit =
     System.err.println(
-      s"Java >= 17 is required to run $fullRunnerName (found Java $javaMajorVersion)"
+      s"Java >= ${Constants.minimumBloopJavaVersion} is required to run $fullRunnerName (found Java $javaMajorVersion)"
     )
 
   def loadJavaProperties(cwd: os.Path) = {
@@ -209,7 +211,8 @@ object ScalaCli {
       }
 
     // load java properties from JAVA_OPTS and JDK_JAVA_OPTIONS environment variables
-    val javaOpts = sys.env.get("JAVA_OPTS").toSeq ++ sys.env.get("JDK_JAVA_OPTIONS").toSeq
+    val javaOpts: Seq[String] =
+      EnvVar.Java.javaOpts.valueOpt.toSeq ++ EnvVar.Java.jdkJavaOpts.valueOpt.toSeq
 
     val ignoredJavaOpts =
       javaOpts
@@ -224,7 +227,8 @@ object ScalaCli {
         }.flatten
     if ignoredJavaOpts.nonEmpty then
       System.err.println(
-        s"Warning: Only java properties are supported in JAVA_OPTS and JDK_JAVA_OPTIONS environment variables. Other options are ignored: ${ignoredJavaOpts.mkString(", ")}"
+        s"Warning: Only java properties are supported in ${EnvVar.Java.javaOpts.name} and ${EnvVar
+            .Java.jdkJavaOpts.name} environment variables. Other options are ignored: ${ignoredJavaOpts.mkString(", ")}"
       )
   }
 
@@ -247,7 +251,7 @@ object ScalaCli {
             val newArgs = powerArgs ++ finalScalaRunnerArgs ++ args0
             LauncherCli.runAndExit(ver, launcherOpts, newArgs)
           case _ if
-                javaMajorVersion < 17
+                javaMajorVersion < Constants.minimumBloopJavaVersion
                 && sys.props.get("scala-cli.kind").exists(_.startsWith("jvm")) =>
             JavaLauncherCli.runAndExit(args)
           case None =>

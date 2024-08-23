@@ -92,7 +92,7 @@ Aliases: `-P` ,`--plugin`
 
 **--scala-version**
 
-Set the Scala version (3.4.2 by default)
+Set the Scala version (3.5.0 by default)
 
 Aliases: `-S` ,`--scala`
 
@@ -156,6 +156,10 @@ Emit source maps
 
 Set the destination path of source maps
 
+**--js-es-module-import-map**
+
+A file relative to the root directory containing import maps for ES module imports
+
 **--js-dom**
 
 Enable jsdom
@@ -174,7 +178,7 @@ Enable Scala Native. To show more options for Scala Native pass `--help-native`
 
 **--native-version**
 
-Set the Scala Native version (0.5.4 by default).
+Set the Scala Native version (0.5.5 by default).
 
 **--native-mode**
 
@@ -490,7 +494,7 @@ Bloop global options file
 
 **--bloop-jvm**
 
-JVM to use to start Bloop (e.g. 'system|11', 'temurin:17', …)
+JVM to use to start Bloop (e.g. 'system|17', 'temurin:21', …)
 
 **--bloop-working-dir**
 
@@ -586,6 +590,12 @@ Should include Scala CLI runner on the runtime ClassPath. Runner is added by def
 
 
 
+**--help-envs**
+
+Show environment variable help
+
+Aliases: `--help-env` ,`--env-help` ,`--envs-help`
+
 **--help-js**
 
 Show options for ScalaJS
@@ -618,7 +628,7 @@ Aliases: `--help-fmt` ,`--scalafmt-help` ,`--fmt-help`
 
 **--with-toolkit**
 
-Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.4.0, 'default' version for typelevel toolkit: 0.1.23
+Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.5.0, 'default' version for typelevel toolkit: 0.1.27
 
 Aliases: `--toolkit`
 
@@ -851,7 +861,7 @@ Aliases: `-P` ,`--plugin`
 
 **--scala-version**
 
-Set the Scala version (3.4.2 by default)
+Set the Scala version (3.5.0 by default)
 
 Aliases: `-S` ,`--scala`
 
@@ -927,6 +937,10 @@ Emit source maps
 
 Set the destination path of source maps
 
+**--js-es-module-import-map**
+
+A file relative to the root directory containing import maps for ES module imports
+
 **--js-dom**
 
 Enable jsdom
@@ -945,7 +959,7 @@ Enable Scala Native. To show more options for Scala Native pass `--help-native`
 
 **--native-version**
 
-Set the Scala Native version (0.5.4 by default).
+Set the Scala Native version (0.5.5 by default).
 
 **--native-mode**
 
@@ -1243,7 +1257,7 @@ Bloop global options file
 
 **--bloop-jvm**
 
-JVM to use to start Bloop (e.g. 'system|11', 'temurin:17', …)
+JVM to use to start Bloop (e.g. 'system|17', 'temurin:21', …)
 
 **--bloop-working-dir**
 
@@ -1339,6 +1353,12 @@ Should include Scala CLI runner on the runtime ClassPath. Runner is added by def
 
 
 
+**--help-envs**
+
+Show environment variable help
+
+Aliases: `--help-env` ,`--env-help` ,`--envs-help`
+
 **--help-js**
 
 Show options for ScalaJS
@@ -1371,7 +1391,7 @@ Aliases: `--help-fmt` ,`--scalafmt-help` ,`--fmt-help`
 
 **--with-toolkit**
 
-Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.4.0, 'default' version for typelevel toolkit: 0.1.23
+Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.5.0, 'default' version for typelevel toolkit: 0.1.27
 
 Aliases: `--toolkit`
 
@@ -1430,7 +1450,7 @@ Aliases: `-P` ,`--plugin`
 
 **--scala-version**
 
-Set the Scala version (3.4.2 by default)
+Set the Scala version (3.5.0 by default)
 
 Aliases: `-S` ,`--scala`
 
@@ -1500,6 +1520,10 @@ Emit source maps
 
 Set the destination path of source maps
 
+**--js-es-module-import-map**
+
+A file relative to the root directory containing import maps for ES module imports
+
 **--js-dom**
 
 Enable jsdom
@@ -1518,7 +1542,7 @@ Enable Scala Native. To show more options for Scala Native pass `--help-native`
 
 **--native-version**
 
-Set the Scala Native version (0.5.4 by default).
+Set the Scala Native version (0.5.5 by default).
 
 **--native-mode**
 
@@ -1828,7 +1852,7 @@ Bloop global options file
 
 **--bloop-jvm**
 
-JVM to use to start Bloop (e.g. 'system|11', 'temurin:17', …)
+JVM to use to start Bloop (e.g. 'system|17', 'temurin:21', …)
 
 **--bloop-working-dir**
 
@@ -1924,6 +1948,12 @@ Should include Scala CLI runner on the runtime ClassPath. Runner is added by def
 
 
 
+**--help-envs**
+
+Show environment variable help
+
+Aliases: `--help-env` ,`--env-help` ,`--envs-help`
+
 **--help-js**
 
 Show options for ScalaJS
@@ -1956,7 +1986,7 @@ Aliases: `--help-fmt` ,`--scalafmt-help` ,`--fmt-help`
 
 **--with-toolkit**
 
-Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.4.0, 'default' version for typelevel toolkit: 0.1.23
+Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.5.0, 'default' version for typelevel toolkit: 0.1.27
 
 Aliases: `--toolkit`
 
@@ -2029,7 +2059,7 @@ Aliases: `-P` ,`--plugin`
 
 **--scala-version**
 
-Set the Scala version (3.4.2 by default)
+Set the Scala version (3.5.0 by default)
 
 Aliases: `-S` ,`--scala`
 
@@ -2105,6 +2135,10 @@ Emit source maps
 
 Set the destination path of source maps
 
+**--js-es-module-import-map**
+
+A file relative to the root directory containing import maps for ES module imports
+
 **--js-dom**
 
 Enable jsdom
@@ -2123,7 +2157,7 @@ Enable Scala Native. To show more options for Scala Native pass `--help-native`
 
 **--native-version**
 
-Set the Scala Native version (0.5.4 by default).
+Set the Scala Native version (0.5.5 by default).
 
 **--native-mode**
 
@@ -2437,7 +2471,7 @@ Bloop global options file
 
 **--bloop-jvm**
 
-JVM to use to start Bloop (e.g. 'system|11', 'temurin:17', …)
+JVM to use to start Bloop (e.g. 'system|17', 'temurin:21', …)
 
 **--bloop-working-dir**
 
@@ -2533,6 +2567,12 @@ Should include Scala CLI runner on the runtime ClassPath. Runner is added by def
 
 
 
+**--help-envs**
+
+Show environment variable help
+
+Aliases: `--help-env` ,`--env-help` ,`--envs-help`
+
 **--help-js**
 
 Show options for ScalaJS
@@ -2565,7 +2605,7 @@ Aliases: `--help-fmt` ,`--scalafmt-help` ,`--fmt-help`
 
 **--with-toolkit**
 
-Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.4.0, 'default' version for typelevel toolkit: 0.1.23
+Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.5.0, 'default' version for typelevel toolkit: 0.1.27
 
 Aliases: `--toolkit`
 
@@ -2647,7 +2687,7 @@ Aliases: `-P` ,`--plugin`
 
 **--scala-version**
 
-Set the Scala version (3.4.2 by default)
+Set the Scala version (3.5.0 by default)
 
 Aliases: `-S` ,`--scala`
 
@@ -2723,6 +2763,10 @@ Emit source maps
 
 Set the destination path of source maps
 
+**--js-es-module-import-map**
+
+A file relative to the root directory containing import maps for ES module imports
+
 **--js-dom**
 
 Enable jsdom
@@ -2741,7 +2785,7 @@ Enable Scala Native. To show more options for Scala Native pass `--help-native`
 
 **--native-version**
 
-Set the Scala Native version (0.5.4 by default).
+Set the Scala Native version (0.5.5 by default).
 
 **--native-mode**
 
@@ -3055,7 +3099,7 @@ Bloop global options file
 
 **--bloop-jvm**
 
-JVM to use to start Bloop (e.g. 'system|11', 'temurin:17', …)
+JVM to use to start Bloop (e.g. 'system|17', 'temurin:21', …)
 
 **--bloop-working-dir**
 
@@ -3151,6 +3195,12 @@ Should include Scala CLI runner on the runtime ClassPath. Runner is added by def
 
 
 
+**--help-envs**
+
+Show environment variable help
+
+Aliases: `--help-env` ,`--env-help` ,`--envs-help`
+
 **--help-js**
 
 Show options for ScalaJS
@@ -3183,7 +3233,7 @@ Aliases: `--help-fmt` ,`--scalafmt-help` ,`--fmt-help`
 
 **--with-toolkit**
 
-Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.4.0, 'default' version for typelevel toolkit: 0.1.23
+Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.5.0, 'default' version for typelevel toolkit: 0.1.27
 
 Aliases: `--toolkit`
 
@@ -3253,7 +3303,7 @@ Aliases: `-P` ,`--plugin`
 
 **--scala-version**
 
-Set the Scala version (3.4.2 by default)
+Set the Scala version (3.5.0 by default)
 
 Aliases: `-S` ,`--scala`
 
@@ -3317,6 +3367,10 @@ Emit source maps
 
 Set the destination path of source maps
 
+**--js-es-module-import-map**
+
+A file relative to the root directory containing import maps for ES module imports
+
 **--js-dom**
 
 Enable jsdom
@@ -3335,7 +3389,7 @@ Enable Scala Native. To show more options for Scala Native pass `--help-native`
 
 **--native-version**
 
-Set the Scala Native version (0.5.4 by default).
+Set the Scala Native version (0.5.5 by default).
 
 **--native-mode**
 
@@ -3631,7 +3685,7 @@ Bloop global options file
 
 **--bloop-jvm**
 
-JVM to use to start Bloop (e.g. 'system|11', 'temurin:17', …)
+JVM to use to start Bloop (e.g. 'system|17', 'temurin:21', …)
 
 **--bloop-working-dir**
 
@@ -3727,6 +3781,12 @@ Should include Scala CLI runner on the runtime ClassPath. Runner is added by def
 
 
 
+**--help-envs**
+
+Show environment variable help
+
+Aliases: `--help-env` ,`--env-help` ,`--envs-help`
+
 **--help-js**
 
 Show options for ScalaJS
@@ -3759,7 +3819,7 @@ Aliases: `--help-fmt` ,`--scalafmt-help` ,`--fmt-help`
 
 **--with-toolkit**
 
-Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.4.0, 'default' version for typelevel toolkit: 0.1.23
+Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.5.0, 'default' version for typelevel toolkit: 0.1.27
 
 Aliases: `--toolkit`
 
@@ -3821,7 +3881,7 @@ Aliases: `--dialect`
 
 **--scalafmt-version**
 
-Pass scalafmt version before running it (3.8.2 by default). If passed, this overrides whatever value is configured in the .scalafmt.conf file.
+Pass scalafmt version before running it (3.8.3 by default). If passed, this overrides whatever value is configured in the .scalafmt.conf file.
 
 Aliases: `--fmt-version`
 
@@ -3878,7 +3938,7 @@ Aliases: `-P` ,`--plugin`
 
 **--scala-version**
 
-Set the Scala version (3.4.2 by default)
+Set the Scala version (3.5.0 by default)
 
 Aliases: `-S` ,`--scala`
 
@@ -3948,6 +4008,10 @@ Emit source maps
 
 Set the destination path of source maps
 
+**--js-es-module-import-map**
+
+A file relative to the root directory containing import maps for ES module imports
+
 **--js-dom**
 
 Enable jsdom
@@ -3966,7 +4030,7 @@ Enable Scala Native. To show more options for Scala Native pass `--help-native`
 
 **--native-version**
 
-Set the Scala Native version (0.5.4 by default).
+Set the Scala Native version (0.5.5 by default).
 
 **--native-mode**
 
@@ -4282,7 +4346,7 @@ Bloop global options file
 
 **--bloop-jvm**
 
-JVM to use to start Bloop (e.g. 'system|11', 'temurin:17', …)
+JVM to use to start Bloop (e.g. 'system|17', 'temurin:21', …)
 
 **--bloop-working-dir**
 
@@ -4378,6 +4442,12 @@ Should include Scala CLI runner on the runtime ClassPath. Runner is added by def
 
 
 
+**--help-envs**
+
+Show environment variable help
+
+Aliases: `--help-env` ,`--env-help` ,`--envs-help`
+
 **--help-js**
 
 Show options for ScalaJS
@@ -4410,7 +4480,7 @@ Aliases: `--help-fmt` ,`--scalafmt-help` ,`--fmt-help`
 
 **--with-toolkit**
 
-Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.4.0, 'default' version for typelevel toolkit: 0.1.23
+Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.5.0, 'default' version for typelevel toolkit: 0.1.27
 
 Aliases: `--toolkit`
 
@@ -4566,7 +4636,7 @@ Aliases: `-P` ,`--plugin`
 
 **--scala-version**
 
-Set the Scala version (3.4.2 by default)
+Set the Scala version (3.5.0 by default)
 
 Aliases: `-S` ,`--scala`
 
@@ -4630,6 +4700,10 @@ Emit source maps
 
 Set the destination path of source maps
 
+**--js-es-module-import-map**
+
+A file relative to the root directory containing import maps for ES module imports
+
 **--js-dom**
 
 Enable jsdom
@@ -4648,7 +4722,7 @@ Enable Scala Native. To show more options for Scala Native pass `--help-native`
 
 **--native-version**
 
-Set the Scala Native version (0.5.4 by default).
+Set the Scala Native version (0.5.5 by default).
 
 **--native-mode**
 
@@ -4940,7 +5014,7 @@ Bloop global options file
 
 **--bloop-jvm**
 
-JVM to use to start Bloop (e.g. 'system|11', 'temurin:17', …)
+JVM to use to start Bloop (e.g. 'system|17', 'temurin:21', …)
 
 **--bloop-working-dir**
 
@@ -5036,6 +5110,12 @@ Should include Scala CLI runner on the runtime ClassPath. Runner is added by def
 
 
 
+**--help-envs**
+
+Show environment variable help
+
+Aliases: `--help-env` ,`--env-help` ,`--envs-help`
+
 **--help-js**
 
 Show options for ScalaJS
@@ -5068,7 +5148,7 @@ Aliases: `--help-fmt` ,`--scalafmt-help` ,`--fmt-help`
 
 **--with-toolkit**
 
-Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.4.0, 'default' version for typelevel toolkit: 0.1.23
+Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.5.0, 'default' version for typelevel toolkit: 0.1.27
 
 Aliases: `--toolkit`
 
@@ -5489,7 +5569,7 @@ Aliases: `-P` ,`--plugin`
 
 **--scala-version**
 
-Set the Scala version (3.4.2 by default)
+Set the Scala version (3.5.0 by default)
 
 Aliases: `-S` ,`--scala`
 
@@ -5553,6 +5633,10 @@ Emit source maps
 
 Set the destination path of source maps
 
+**--js-es-module-import-map**
+
+A file relative to the root directory containing import maps for ES module imports
+
 **--js-dom**
 
 Enable jsdom
@@ -5571,7 +5655,7 @@ Enable Scala Native. To show more options for Scala Native pass `--help-native`
 
 **--native-version**
 
-Set the Scala Native version (0.5.4 by default).
+Set the Scala Native version (0.5.5 by default).
 
 **--native-mode**
 
@@ -5863,7 +5947,7 @@ Bloop global options file
 
 **--bloop-jvm**
 
-JVM to use to start Bloop (e.g. 'system|11', 'temurin:17', …)
+JVM to use to start Bloop (e.g. 'system|17', 'temurin:21', …)
 
 **--bloop-working-dir**
 
@@ -5959,6 +6043,12 @@ Should include Scala CLI runner on the runtime ClassPath. Runner is added by def
 
 
 
+**--help-envs**
+
+Show environment variable help
+
+Aliases: `--help-env` ,`--env-help` ,`--envs-help`
+
 **--help-js**
 
 Show options for ScalaJS
@@ -5991,7 +6081,7 @@ Aliases: `--help-fmt` ,`--scalafmt-help` ,`--fmt-help`
 
 **--with-toolkit**
 
-Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.4.0, 'default' version for typelevel toolkit: 0.1.23
+Add toolkit to classPath (not supported in Scala 2.12), 'default' version for Scala toolkit: 0.5.0, 'default' version for typelevel toolkit: 0.1.27
 
 Aliases: `--toolkit`
 
@@ -6136,7 +6226,7 @@ Bloop global options file
 
 **--bloop-jvm**
 
-JVM to use to start Bloop (e.g. 'system|11', 'temurin:17', …)
+JVM to use to start Bloop (e.g. 'system|17', 'temurin:21', …)
 
 **--bloop-working-dir**
 

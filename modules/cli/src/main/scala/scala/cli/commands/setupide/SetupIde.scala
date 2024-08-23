@@ -11,9 +11,11 @@ import java.nio.charset.{Charset, StandardCharsets}
 import scala.build.EitherCps.{either, value}
 import scala.build.*
 import scala.build.bsp.IdeInputs
+import scala.build.compose.{ComposedInputs, Inputs, InputsComposer, SimpleInputs}
 import scala.build.errors.{BuildException, WorkspaceError}
-import scala.build.input.{Inputs, OnDisk, Virtual, WorkspaceOrigin}
+import scala.build.input.{Module, OnDisk, Virtual, WorkspaceOrigin}
 import scala.build.internal.Constants
+import scala.build.internals.EnvVar
 import scala.build.options.{BuildOptions, Scope}
 import scala.cli.CurrentParams
 import scala.cli.commands.shared.{SharedBspFileOptions, SharedOptions}
@@ -25,7 +27,7 @@ import scala.jdk.CollectionConverters.*
 object SetupIde extends ScalaCommand[SetupIdeOptions] {
 
   def downloadDeps(
-    inputs: Inputs,
+    inputs: Module,
     options: BuildOptions,
     logger: Logger
   ): Either[BuildException, Artifacts] = {
@@ -33,7 +35,7 @@ object SetupIde extends ScalaCommand[SetupIdeOptions] {
     // ignoring errors related to sources themselves
     val maybeSourceBuildOptions = either {
       val (crossSources, allInputs) = value {
-        CrossSources.forInputs(
+        CrossSources.forModuleInputs(
           inputs,
           Sources.defaultPreprocessors(
             options.archiveCache,
@@ -67,7 +69,7 @@ object SetupIde extends ScalaCommand[SetupIdeOptions] {
 
   override def runCommand(options: SetupIdeOptions, args: RemainingArgs, logger: Logger): Unit = {
     val buildOptions = buildOptionsOrExit(options)
-    val inputs       = options.shared.inputs(args.all).orExit(logger)
+    val inputs       = options.shared.composeInputs(args.all).orExit(logger)
     CurrentParams.workspaceOpt = Some(inputs.workspace)
 
     val bspPath = writeBspConfiguration(
@@ -101,6 +103,26 @@ object SetupIde extends ScalaCommand[SetupIdeOptions] {
       case Right(_) =>
     }
 
+  def runSafe(
+    options: SharedOptions,
+    inputs: Module,
+    logger: Logger,
+    buildOptions: BuildOptions,
+    previousCommandName: Option[String],
+    args: Seq[String]
+  ): Unit =
+    writeBspConfiguration(
+      SetupIdeOptions(shared = options),
+      SimpleInputs(inputs),
+      buildOptions,
+      previousCommandName,
+      args
+    ) match {
+      case Left(ex) =>
+        logger.debug(s"Ignoring error during setup-ide: ${ex.message}")
+      case Right(_) =>
+    }
+
   override def sharedOptions(options: SetupIdeOptions): Option[SharedOptions] = Some(options.shared)
 
   private def writeBspConfiguration(
@@ -111,7 +133,7 @@ object SetupIde extends ScalaCommand[SetupIdeOptions] {
     args: Seq[String]
   ): Either[BuildException, Option[os.Path]] = either {
 
-    val virtualInputs = inputs.elements.collect {
+    val virtualInputs = inputs.modules.flatMap(_.elements).collect {
       case v: Virtual => v
     }
     if (virtualInputs.nonEmpty)
@@ -124,23 +146,26 @@ object SetupIde extends ScalaCommand[SetupIdeOptions] {
     val logger = options.shared.logger
 
     if (buildOptions.classPathOptions.allExtraDependencies.toSeq.nonEmpty)
-      value(downloadDeps(
-        inputs,
-        buildOptions,
-        logger
-      ))
+      for (module <- inputs.modules) do value(downloadDeps(module, buildOptions, logger))
 
-    val (bspName, bspJsonDestination) = bspDetails(inputs.workspace, options.bspFile)
-    val scalaCliBspJsonDestination =
-      inputs.workspace / Constants.workspaceDirName / "ide-options-v2.json"
+    val workspace = inputs.workspace
+
+    val (bspName, bspJsonDestination) = bspDetails(workspace, options.bspFile)
+    val scalaCliBspJsonDestination = workspace / Constants.workspaceDirName / "ide-options-v2.json"
     val scalaCliBspLauncherOptsJsonDestination =
-      inputs.workspace / Constants.workspaceDirName / "ide-launcher-options.json"
+      workspace / Constants.workspaceDirName / "ide-launcher-options.json"
     val scalaCliBspInputsJsonDestination =
-      inputs.workspace / Constants.workspaceDirName / "ide-inputs.json"
-    val scalaCliBspEnvsJsonDestination =
-      inputs.workspace / Constants.workspaceDirName / "ide-envs.json"
+      workspace / Constants.workspaceDirName / "ide-inputs.json"
+    val scalaCliBspEnvsJsonDestination = workspace / Constants.workspaceDirName / "ide-envs.json"
 
-    val inputArgs = inputs.elements.collect { case d: OnDisk => d.path.toString }
+    // FIXME single modules can also be defined with module config toml file
+    val inputArgs = inputs match
+      case ComposedInputs(modules, targetModule, workspace) =>
+        InputsComposer.findModuleConfig(args, Os.pwd)
+          .orExit(logger)
+          .fold(args)(p => Seq(p.toString))
+      case SimpleInputs(singleModule) => singleModule.elements
+          .collect { case d: OnDisk => d.path.toString }
 
     val ideInputs = IdeInputs(
       options.shared.validateInputArgs(args)
@@ -166,7 +191,7 @@ object SetupIde extends ScalaCommand[SetupIdeOptions] {
       bspName,
       bspArgs.asJava,
       Constants.version,
-      bloop.rifle.internal.Constants.bspVersion,
+      bloop.rifle.internal.BuildInfo.bspVersion,
       List("scala", "java").asJava
     )
 
@@ -185,7 +210,8 @@ object SetupIde extends ScalaCommand[SetupIdeOptions] {
     val scalaCliOptionsForBspJson    = writeToArray(options.shared)(SharedOptions.jsonCodec)
     val scalaCliLaunchOptsForBspJson = writeToArray(launcherOptions)(LauncherOptions.jsonCodec)
     val scalaCliBspInputsJson        = writeToArray(ideInputs)
-    val scalaCliBspEnvsJson          = writeToArray(sys.env)
+    val envsForBsp          = sys.env.filter((key, _) => EnvVar.allBsp.map(_.name).contains(key))
+    val scalaCliBspEnvsJson = writeToArray(envsForBsp)
 
     if (inputs.workspaceOrigin.contains(WorkspaceOrigin.HomeDir))
       value(Left(new WorkspaceError(
